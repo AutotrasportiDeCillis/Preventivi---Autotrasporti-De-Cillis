@@ -4,7 +4,6 @@
     <title>Storico Preventivi - Autotrasporti De Cillis</title>
     <script src="jspdf.umd.min.js"></script> 
     
-    <!-- Librerie Firebase per Realtime Database (versione compatibile) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
@@ -200,7 +199,7 @@
             });
         }
 
-        // --- FUNZIONE GENERAZIONE PDF (Non modificato) ---
+        // --- FUNZIONE GENERAZIONE PDF (AGGIUNTA COMPRESSIONE 'FAST') ---
         function generaPDF(p) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -211,7 +210,10 @@
             const prezzoKmUsato = p.prezzoKmUsato || (p.tipoMezzo ? CONFIGURAZIONE[p.tipoMezzo] : 0);
             let yPos = 15;
             
-            if (logoBase64) { doc.addImage(logoBase64, 'PNG', 15, yPos, 40, 40); }
+            if (logoBase64) { 
+                // *** AGGIUNTO IL PARAMETRO DI COMPRESSIONE 'FAST' ***
+                doc.addImage(logoBase64, 'PNG', 15, yPos, 40, 40, 'logo', 'FAST'); 
+            }
             doc.setFontSize(10);
             doc.text(TITOLO_AZIENDA, 60, yPos + 5);
             doc.text(`P.IVA: ${P_IVA}`, 60, yPos + 10);

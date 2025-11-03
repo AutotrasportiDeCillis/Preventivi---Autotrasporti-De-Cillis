@@ -4,7 +4,6 @@
     <title>Preventivo Autotrasporti De Cillis</title>
     <script src="jspdf.umd.min.js"></script> 
     
-    <!-- Librerie Firebase per Realtime Database (versione compatibile) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
@@ -286,7 +285,7 @@
                 });
         }
         
-        // --- GESTIONE LOGO BASE64 e PDF (Non modificato) ---
+        // --- GESTIONE LOGO BASE64 e PDF (AGGIUNTA COMPRESSIONE 'FAST') ---
         function caricaLogoBase64() {
             const imgEl = document.getElementById('appLogo');
             imgEl.style.display = 'none';
@@ -319,7 +318,10 @@
             const COSTO_IVA = (currentTotaleFinale - currentCostoBase).toFixed(2);
             let yPos = 15;
             
-            if (logoBase64) { doc.addImage(logoBase64, 'PNG', 15, yPos, 40, 40); }
+            if (logoBase64) { 
+                // *** AGGIUNTO IL PARAMETRO DI COMPRESSIONE 'FAST' ***
+                doc.addImage(logoBase64, 'PNG', 15, yPos, 40, 40, 'logo', 'FAST'); 
+            }
             doc.setFontSize(10);
             doc.text(TITOLO_AZIENDA, 60, yPos + 5);
             doc.text(`P.IVA: ${P_IVA}`, 60, yPos + 10);
