@@ -4,138 +4,38 @@
     <title>Preventivo Autotrasporti De Cillis</title>
     <script src="jspdf.umd.min.js"></script> 
     
+    <!-- Librerie Firebase per Realtime Database (versione compatibile) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
     <style>
-        /* Stile Globale e Tipografia */
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            padding: 20px; 
-            background-color: #f4f7f6;
-            color: #333; 
-            line-height: 1.6; 
-        }
-        .container { 
-            max-width: 850px; 
-            margin: 30px auto; 
-            background: white; 
-            padding: 40px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); 
-        }
-        
-        /* Intestazione e Dettagli */
-        .header { 
-            text-align: center; 
-            margin-bottom: 30px; 
-            border-bottom: 2px solid #e0e0e0; 
-            padding-bottom: 20px;
-        }
-        .header img { 
-            max-width: 120px; 
-            height: auto; 
-            margin-bottom: 15px; 
-            border-radius: 4px; 
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f7f6; color: #333; line-height: 1.6; }
+        .container { max-width: 850px; margin: 30px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 20px;}
+        .header img { max-width: 120px; height: auto; margin-bottom: 15px; border-radius: 4px; }
         .header h1 { color: #2c3e50; font-size: 1.8em; margin: 5px 0 10px; }
         .info-dettagli { font-size: 0.9em; color: #777; font-weight: normal; }
-
-        /* Controlli Protocollo */
-        .protocollo-group {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px; 
-            font-size: 1.1em; 
-            padding: 5px 0; 
-            border-bottom: 1px dashed #e0e0e0; 
-            text-align: left;
-        }
+        .protocollo-group { display: flex; align-items: center; margin-bottom: 15px; font-size: 1.1em; padding: 5px 0; border-bottom: 1px dashed #e0e0e0; text-align: left;}
         .protocollo-group strong { margin-right: 10px; }
-        #protocolloNumeroDisplay { 
-            font-weight: bold; 
-            margin-right: 20px; 
-        }
-        #protocolloNumeroInput {
-            width: 80px; 
-            padding: 5px; 
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 1em;
-            text-align: center;
-            margin-right: 10px;
-        }
-        .protocollo-btn {
-            padding: 5px 10px;
-            font-size: 1em;
-            width: 30px;
-            height: 30px;
-            line-height: 1;
-            border: 1px solid #ccc;
-            background-color: #f0f0f0;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        .protocollo-btn:hover {
-            background-color: #e0e0e0;
-        }
-        
-        /* Input e Pulsanti Generali */
+        #protocolloNumeroDisplay { font-weight: bold; margin-right: 20px; }
+        #protocolloNumeroInput { width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; text-align: center; margin-right: 10px; }
+        .protocollo-btn { padding: 5px 10px; font-size: 1em; width: 30px; height: 30px; line-height: 1; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; border-radius: 4px;}
+        .protocollo-btn:hover { background-color: #e0e0e0; }
         .input-group { padding: 20px 0; margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
-        select, input[type="number"], input[type="text"] {
-            width: calc(100% - 22px); 
-            padding: 12px; 
-            margin-bottom: 20px; 
-            border: 1px solid #c0c0c0; 
-            border-radius: 6px; 
-            box-sizing: border-box; 
-            font-size: 1em;
-            background-color: #fff;
-        }
-        /* Stile specifico per il campo prezzo Km */
-        #prezzo_km_variabile {
-            background-color: #fff3e0; /* Sfondo leggermente colorato per evidenziare */
-        }
-
-        button { 
-            padding: 12px 20px; 
-            background-color: #3498db;
-            color: white; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-size: 1em; 
-            margin-right: 15px;
-            transition: background-color 0.3s;
-        }
+        select, input[type="number"], input[type="text"] { width: calc(100% - 22px); padding: 12px; margin-bottom: 20px; border: 1px solid #c0c0c0; border-radius: 6px; box-sizing: border-box; font-size: 1em; background-color: #fff; }
+        #prezzo_km_variabile { background-color: #fff3e0; }
+        button { padding: 12px 20px; background-color: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; margin-right: 15px; transition: background-color 0.3s; }
         button:hover { background-color: #2980b9; }
         #gestioneButton { background-color: #f39c12; }
         #gestioneButton:hover { background-color: #e67e22; }
-        
-        /* Risultato */
-        #risultato { 
-            font-size: 1.8em; 
-            margin-top: 30px; 
-            font-weight: bold; 
-            color: #28a745;
-            border-top: 1px dashed #e0e0e0; 
-            padding-top: 25px;
-            text-align: center;
-        }
-
-        /* Funzione di reset nascosta */
-        #resetLink {
-            display: block;
-            margin-top: 20px;
-            font-size: 0.8em;
-            color: #e74c3c;
-            text-decoration: underline;
-            cursor: pointer;
-        }
+        #risultato { font-size: 1.8em; margin-top: 30px; font-weight: bold; color: #28a745; border-top: 1px dashed #e0e0e0; padding-top: 25px; text-align: center; }
+        #resetLink { display: block; margin-top: 20px; font-size: 0.8em; color: #e74c3c; text-decoration: underline; cursor: pointer; }
     </style>
 </head>
 <body onload="inizializzaApp()">
 
     <div class="container">
-        
         <div class="header">
             <img src="1.png" alt="Logo Autotrasporti De Cillis" id="appLogo" style="display: none;">
             <h1>Preventivo Autotrasporti De Cillis</h1>
@@ -150,23 +50,19 @@
             <input type="number" id="protocolloNumeroInput" value="1" min="1" onchange="aggiornaProtocollo()">
             <button class="protocollo-btn" onclick="cambiaProtocollo(-1)">-</button>
             <button class="protocollo-btn" onclick="cambiaProtocollo(1)">+</button>
-            
             <span id="protocolloNumeroDisplay"></span>
         </div>
 
         <div class="input-group">
             <label for="denominazione_cliente">Denominazione Cliente:</label>
             <input type="text" id="denominazione_cliente">
-
             <label for="tipo_mezzo">Tipo Mezzo:</label>
             <select id="tipo_mezzo">
                 <option value="Carrellone">Carrellone</option>
                 <option value="Centinato">Centinato</option>
             </select>
-
             <label for="km_totali">Km Totali A/R:</label>
             <input type="number" id="km_totali" value="0">
-            
             <label for="prezzo_km_variabile">Prezzo al Km Variabile (€/km) (Opzionale):</label>
             <input type="number" id="prezzo_km_variabile" placeholder="Lascia vuoto per usare il prezzo standard" step="0.01">
         </div>
@@ -177,23 +73,42 @@
 
         <div id="risultato">Totale Finale (IVA Incl.): 0,00 €</div>
 
-        <a id="resetLink" onclick="resetProtocollo()">Azzera Contatore Protocollo (Solo ID, non cancella preventivi)</a>
+        <a id="resetLink" onclick="resetProtocollo()">Elimina TUTTO lo Storico Cloud e Reinizializza Contatore</a>
         
     </div>
 
     <script>
-        const STORAGE_KEY = 'preventivi_storico';
-        // Rimosso COUNTER_KEY perché il protocollo si basa sullo storico
+        // === CONFIGURAZIONE FIREBASE INSERITA DALL'UTENTE ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPXp7geS7Srr2rWHHqwrJfbze3PoMdLzk",
+            authDomain: "preventivi---de-cillis.firebaseapp.com",
+            projectId: "preventivi---de-cillis",
+            storageBucket: "preventivi---de-cillis.firebasestorage.app",
+            messagingSenderId: "985249210481",
+            appId: "1:985249210481:web:82ab65ea03a58a223fbbd0"
+        };
+        // ======================================================
+        
+        // Inizializza Firebase
+        let db;
+        try {
+             // Il databaseURL non è presente nella configurazione, lo inferiamo da authDomain
+             firebaseConfig.databaseURL = firebaseConfig.databaseURL || `https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com`;
+             firebase.initializeApp(firebaseConfig);
+             db = firebase.database();
+             console.log("Firebase Database Connesso.");
+        } catch (e) {
+             console.error("ERRORE: Impossibile connettersi a Firebase. Controlla la configurazione o le regole del database.", e);
+             // Se fallisce, avvisiamo l'utente che la sincronizzazione non funzionerà
+             alert("ERRORE: Impossibile connettersi al database Cloud. Lo storico non verrà sincronizzato.");
+        }
+
+        const FIREBASE_PATH = 'preventivi_storico'; 
         const TITOLO_AZIENDA = "AUTOTRASPORTI DE CILLIS";
         const P_IVA = "02574400020";
         const EMAIL = "autotrasportidecillis@gmail.com";
 
-        const CONFIGURAZIONE = {
-            "Carrellone": 2.30,
-            "Centinato": 1.80,
-            "CostoFisso": 300.00,
-            "IVA": 0.22 
-        };
+        const CONFIGURAZIONE = { "Carrellone": 2.30, "Centinato": 1.80, "CostoFisso": 300.00, "IVA": 0.22 };
 
         let logoBase64 = null;
         let currentProtocollo = ''; 
@@ -208,96 +123,89 @@
         // --- INIZIALIZZAZIONE ---
         function inizializzaApp() {
             caricaLogoBase64(); 
-            // Carica il protocollo basandosi sullo storico
             caricaContatore(); 
-            aggiornaProtocolloDisplay();
         }
         
-        // --- LOGICA CONTATORE PROTOCOLLO (Basata SOLO sullo Storico) ---
+        // --- LOGICA CONTATORE PROTOCOLLO (Basata su Firebase) ---
         function caricaContatore() {
-            const storicoJSON = localStorage.getItem(STORAGE_KEY);
-            let storico = [];
-            let maxCount = 0;
+            if (!db) { return; } 
 
-            try {
-                storico = storicoJSON ? JSON.parse(storicoJSON) : [];
-            } catch (e) {
-                console.error("Errore nel parsing dello storico:", e);
-            }
-
-            if (storico.length > 0) {
-                storico.forEach(p => {
-                    // Estrai la parte numerica (es. 003) da '2025/003'
-                    const protocolloPart = p.protocollo.split('/')[1]; 
-                    if (protocolloPart) {
-                        const count = parseInt(protocolloPart);
-                        if (!isNaN(count) && count > maxCount) {
-                            maxCount = count;
-                        }
+            // Legge tutti i preventivi per trovare il numero di protocollo più alto
+            db.ref(FIREBASE_PATH).once('value', (snapshot) => {
+                let maxCount = 0;
+                
+                if (snapshot.exists()) {
+                    const storico = snapshot.val();
+                    for (let key in storico) {
+                         const p = storico[key];
+                         // Estrae solo il numero dal protocollo (es. '2025/005' -> '005')
+                         const protocolloPart = p.protocollo.split('/')[1]; 
+                         if (protocolloPart) {
+                             const count = parseInt(protocolloPart);
+                             if (!isNaN(count) && count > maxCount) {
+                                 maxCount = count;
+                             }
+                         }
                     }
-                });
-            }
-            
-            // Il prossimo protocollo è maxCount + 1 (almeno 1)
-            currentProtocolloCount = Math.max(1, maxCount + 1);
+                }
+                
+                // Imposta il protocollo corrente come il massimo trovato + 1
+                currentProtocolloCount = Math.max(1, maxCount + 1);
+                document.getElementById('protocolloNumeroInput').value = currentProtocolloCount;
+                aggiornaProtocolloDisplay();
 
-            // Aggiorna il campo input con il valore calcolato
-            document.getElementById('protocolloNumeroInput').value = currentProtocolloCount;
+            }, (error) => {
+                console.error("Errore nel caricamento dello storico da Firebase:", error);
+                document.getElementById('protocolloNumeroInput').value = 1;
+                aggiornaProtocolloDisplay();
+            });
         }
-
+        
+        // --- Altre funzioni di Protocollo ---
         function formattaProtocollo(numero) {
             const oggi = new Date();
             const anno = oggi.getFullYear();
-            // Assicura che il numero sia almeno 1
             const num = Math.max(1, parseInt(numero)); 
             const numeroProgressivo = num.toString().padStart(3, '0');
-            
             return `${anno}/${numeroProgressivo}`;
         }
 
         function aggiornaProtocolloDisplay() {
             const inputEl = document.getElementById('protocolloNumeroInput');
             const inputVal = parseInt(inputEl.value);
-            
-            // Non permettere numeri negativi o zero e corregge l'input se necessario
             currentProtocolloCount = Math.max(1, isNaN(inputVal) ? 1 : inputVal); 
-            inputEl.value = currentProtocolloCount; // Forza il valore corretto nell'input
-            
+            inputEl.value = currentProtocolloCount; 
             currentProtocollo = formattaProtocollo(currentProtocolloCount);
-            
-            // Aggiorna il display
             document.getElementById('protocolloNumeroDisplay').innerText = `(${currentProtocollo})`;
         }
 
         function cambiaProtocollo(delta) {
             const inputEl = document.getElementById('protocolloNumeroInput');
             let nuovoValore = parseInt(inputEl.value) + delta;
-            
-            // Assicura che non vada sotto 1
             nuovoValore = Math.max(1, nuovoValore); 
-            
             inputEl.value = nuovoValore;
             aggiornaProtocolloDisplay();
         }
 
-        // Funzione per l'evento onchange dell'input
-        function aggiornaProtocollo() {
-            aggiornaProtocolloDisplay();
-        }
+        function aggiornaProtocollo() { aggiornaProtocolloDisplay(); }
 
-        // --- FUNZIONE PER AZZERARE IL PROTOCOLLO (Solo Contatore) ---
         function resetProtocollo() {
-            if (confirm("Sei sicuro di voler AZZERARE il contatore del Protocollo? Verrà ricalcolato leggendo il numero più alto nello storico + 1.")) {
-                // Svuota lo storico, in modo che ricaricando l'app parta da 1
-                localStorage.removeItem(STORAGE_KEY);
-                alert("Storico eliminato e contatore resettato. Ricarica la pagina.");
-                location.reload(); 
+            if (!db) { alert("Connessione Firebase non attiva. Controlla la console per gli errori."); return; }
+            if (confirm("ATTENZIONE: Sei sicuro di voler ELIMINARE TUTTO lo storico preventivi dal Cloud? Questa azione è irreversibile su tutti i dispositivi.")) {
+                db.ref(FIREBASE_PATH).set(null)
+                    .then(() => {
+                        alert("Storico eliminato con successo. La pagina verrà ricaricata.");
+                        location.reload(); 
+                    })
+                    .catch((error) => {
+                        alert("Errore durante l'eliminazione dei dati. Controlla la console.");
+                        console.error("Errore eliminazione:", error);
+                    });
             }
         }
         
-        // --- CALCOLO (Nessun cambiamento) ---
+        // --- CALCOLO ---
         function calcolaPreventivo() {
-            // Assicurati che il protocollo sia aggiornato prima del calcolo
             aggiornaProtocolloDisplay();
 
             currentTipoMezzo = document.getElementById('tipo_mezzo').value;
@@ -308,39 +216,39 @@
             if (!currentCliente) { alert("Per favore, inserisci la Denominazione Cliente prima di calcolare."); return; }
             if (currentKmTotali < 0 || isNaN(currentKmTotali)) { alert("Inserisci un valore valido per i Km."); return; }
 
-            // 1. Determina il prezzo al Km da usare
             if (!isNaN(prezzoVariabileInput) && prezzoVariabileInput > 0) {
                 currentPrezzoKmUsato = prezzoVariabileInput;
             } else {
                 currentPrezzoKmUsato = CONFIGURAZIONE[currentTipoMezzo];
             }
 
-            // 2. Calcola il costo base
             currentCostoBase = (currentKmTotali <= 100) 
                 ? CONFIGURAZIONE.CostoFisso 
                 : currentKmTotali * currentPrezzoKmUsato;
 
-            // 3. Calcola il totale finale
             currentTotaleFinale = currentCostoBase * (1 + CONFIGURAZIONE.IVA);
             
             currentCostoBase = parseFloat(currentCostoBase.toFixed(2));
             currentTotaleFinale = parseFloat(currentTotaleFinale.toFixed(2));
-
 
             document.getElementById('risultato').innerHTML = 
                 "<strong>Totale Finale (IVA Incl.):</strong> " + currentTotaleFinale.toFixed(2) + " €";
             document.getElementById('salvaButton').style.display = 'inline-block';
         }
 
-        // --- SALVA e ARCHIVIA (Logica Modificata per Salvataggio Prioritario) ---
+        // --- SALVA e ARCHIVIA (Su Firebase) ---
         function salvaArchiviaPreventivo() {
-            if (currentTotaleFinale === 0 || !currentCliente) { alert("Per favore, calcola prima il preventivo."); return; }
+            if (currentTotaleFinale === 0 || !currentCliente || !db) { 
+                alert("Per favore, calcola il preventivo e assicurati che la connessione Cloud sia attiva."); 
+                return; 
+            }
 
-            // Usa il protocollo attualmente visualizzato
             const protocolloDaSalvare = currentProtocollo; 
+            // Genera una chiave univoca (ID) per il record nel database
+            const newKey = db.ref(FIREBASE_PATH).push().key; 
             
             const preventivoRecord = {
-                id: Date.now(), 
+                id: newKey, 
                 protocollo: protocolloDaSalvare, 
                 data: new Date().toLocaleDateString('it-IT'),
                 cliente: currentCliente,
@@ -350,55 +258,48 @@
                 prezzoKmUsato: currentPrezzoKmUsato.toFixed(2) 
             };
 
-            // 1. **SALVA IL RECORD NELLO STORICO (QUESTA OPERAZIONE ORA SALVA SEMPRE)**
-            const storicoJSON = localStorage.getItem(STORAGE_KEY);
-            let storico = storicoJSON ? JSON.parse(storicoJSON) : [];
-            
-            storico.push(preventivoRecord);
-            
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(storico));
-            
-            console.log(`Preventivo N. ${protocolloDaSalvare} salvato nello storico.`);
+            // Salva il record sul Cloud
+            db.ref(FIREBASE_PATH + '/' + newKey).set(preventivoRecord)
+                .then(() => {
+                    try {
+                         generaPDF();
+                         alert(`Preventivo N. ${protocolloDaSalvare} salvato sul Cloud e PDF scaricato con successo.`);
+                    } catch (e) {
+                         alert(`ATTENZIONE: Preventivo N. ${protocolloDaSalvare} salvato sul Cloud, ma il download del PDF è fallito. Controlla lo storico.`);
+                         console.error("Errore nella generazione PDF:", e);
+                    }
 
-            // 2. **GENERA IL PDF**
-            try {
-                 generaPDF();
-                 alert(`Preventivo N. ${protocolloDaSalvare} salvato e PDF scaricato con successo. Lo storico è stato aggiornato.`);
-            } catch (e) {
-                 alert(`ATTENZIONE: Preventivo N. ${protocolloDaSalvare} salvato nello storico, ma il download del PDF è fallito. Controlla lo storico.`);
-                 console.error("Errore nella generazione PDF:", e);
-            }
+                    // Pulisci i campi dopo il salvataggio
+                    document.getElementById('km_totali').value = 0;
+                    document.getElementById('denominazione_cliente').value = '';
+                    document.getElementById('prezzo_km_variabile').value = ''; 
+                    document.getElementById('risultato').innerHTML = "Totale Finale (IVA Incl.): 0,00 €";
+                    document.getElementById('salvaButton').style.display = 'none';
+                    
+                    // Ricarica il contatore per il prossimo preventivo
+                    caricaContatore();
 
-            // 3. **RESET E AGGIORNAMENTO**
-            document.getElementById('km_totali').value = 0;
-            document.getElementById('denominazione_cliente').value = '';
-            document.getElementById('prezzo_km_variabile').value = ''; 
-            document.getElementById('risultato').innerHTML = "Totale Finale (IVA Incl.): 0,00 €";
-            document.getElementById('salvaButton').style.display = 'none';
-            
-            // Ricarica il contatore leggendo il nuovo massimo dallo storico aggiornato
-            caricaContatore();
-            aggiornaProtocolloDisplay(); 
+                })
+                .catch((error) => {
+                    alert("Errore durante il salvataggio su Firebase. Controlla la connessione.");
+                    console.error("Errore salvataggio:", error);
+                });
         }
-
-        // --- GESTIONE LOGO BASE64 (1.png) ---
+        
+        // --- GESTIONE LOGO BASE64 e PDF (Non modificato) ---
         function caricaLogoBase64() {
             const imgEl = document.getElementById('appLogo');
             imgEl.style.display = 'none';
-            
             const image = new Image();
             image.src = "1.png"; 
             image.crossOrigin = "Anonymous";
-
             image.onload = function() {
                 imgEl.style.display = 'inline-block';
-                
                 const canvas = document.createElement("canvas");
                 canvas.width = image.naturalWidth;
                 canvas.height = image.naturalHeight;
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(image, 0, 0);
-                
                 try {
                     logoBase64 = canvas.toDataURL("image/png");
                 } catch (e) {
@@ -406,93 +307,57 @@
                 }
             };
             image.onerror = function() {
-                // Tentativo di fallback se l'immagine non è nella root
                 imgEl.src = "./1.png";
-                imgEl.onload = function() {
-                     imgEl.style.display = 'inline-block';
-                }
-                imgEl.onerror = function() {
-                    console.error("Logo '1.png' non trovato. Controlla il nome del file e il percorso.");
-                }
+                imgEl.onload = function() { imgEl.style.display = 'inline-block'; }
+                imgEl.onerror = function() { console.error("Logo '1.png' non trovato."); }
             };
         }
 
-
-        // --- FUNZIONE GENERAZIONE PDF (Nessun cambiamento) ---
         function generaPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
             const COSTO_IVA = (currentTotaleFinale - currentCostoBase).toFixed(2);
-            
             let yPos = 15;
             
-            // LOGO E INTESTAZIONE
-            if (logoBase64) {
-                 doc.addImage(logoBase64, 'PNG', 15, yPos, 40, 40); 
-            }
-
-            // Dati Aziendali
+            if (logoBase64) { doc.addImage(logoBase64, 'PNG', 15, yPos, 40, 40); }
             doc.setFontSize(10);
             doc.text(TITOLO_AZIENDA, 60, yPos + 5);
             doc.text(`P.IVA: ${P_IVA}`, 60, yPos + 10);
             doc.text(`Email: ${EMAIL}`, 60, yPos + 15);
-
-            // Separatore orizzontale
             doc.setDrawColor(200, 200, 200); 
             doc.line(15, 60, 195, 60);
-
-            // Titolo Documento
             doc.setFontSize(18);
             doc.setFont(undefined, 'bold');
             doc.text("Preventivo Autotrasporti De Cillis", doc.internal.pageSize.getWidth() / 2, 70, { align: 'center' });
             doc.setFont(undefined, 'normal');
-            
             yPos = 85;
             doc.setFontSize(12);
-
-            // Info Cliente e Protocollo
             doc.setFont(undefined, 'bold');
             doc.text(`Protocollo N.:`, 20, yPos);
             doc.setFont(undefined, 'normal');
             doc.text(currentProtocollo, 55, yPos); yPos += 7;
-
             doc.setFont(undefined, 'bold');
             doc.text(`Cliente:`, 20, yPos);
             doc.setFont(undefined, 'normal');
             doc.text(currentCliente, 40, yPos); yPos += 10;
-            
             doc.text(`Data: ${new Date().toLocaleDateString('it-IT')}`, 20, yPos); yPos += 15;
-
-
-            // Dettagli Calcolo
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
             doc.text("RIEPILOGO COSTI", 20, yPos); 
             doc.setFont(undefined, 'normal'); yPos += 10;
-            
             doc.setFontSize(12);
             doc.text(`Tipo Mezzo: ${currentTipoMezzo}`, 20, yPos); yPos += 7;
             doc.text(`Km Totali A/R: ${currentKmTotali.toFixed(0)} km`, 20, yPos); yPos += 7;
-            
-            // Mostra il prezzo al Km usato
             doc.text(`Prezzo/Km Applicato: ${currentPrezzoKmUsato.toFixed(2)} €/km`, 20, yPos); yPos += 10;
-            
-            // Tabella costi
             doc.setDrawColor(0, 0, 0);
             doc.line(20, yPos, 190, yPos); 
-
             yPos += 7;
             doc.text(`Costo Base (IVA Escl.):`, 20, yPos);
             doc.text(`${currentCostoBase.toFixed(2)} €`, 190, yPos, { align: 'right' }); yPos += 7;
-            
             doc.text(`Aliquota IVA (${(CONFIGURAZIONE.IVA * 100).toFixed(0)}%):`, 20, yPos);
             doc.text(`${COSTO_IVA} €`, 190, yPos, { align: 'right' }); yPos += 7;
-            
             doc.line(20, yPos, 190, yPos); 
-
             yPos += 7;
-            // Totale Finale in grande
             doc.setFontSize(16);
             doc.setFont(undefined, 'bold');
             doc.text("TOTALE FINALE (IVA INCLUSA):", 20, yPos);
@@ -500,7 +365,6 @@
             doc.setFont(undefined, 'normal'); yPos += 10;
             doc.line(20, yPos, 190, yPos);
             
-            // Salva il PDF
             const nomeFile = `Preventivo_N${currentProtocollo.replace('/', '-')}_${currentCliente.replace(/ /g, '_')}.pdf`;
             doc.save(nomeFile);
         }

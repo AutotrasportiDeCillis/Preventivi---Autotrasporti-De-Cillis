@@ -4,77 +4,31 @@
     <title>Storico Preventivi - Autotrasporti De Cillis</title>
     <script src="jspdf.umd.min.js"></script> 
     
+    <!-- Librerie Firebase per Realtime Database (versione compatibile) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f7f6; color: #333; line-height: 1.6; }
         .container { max-width: 1200px; margin: 30px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
-        
-        /* Header con Logo e Dati Aziendali */
-        .header { 
-            text-align: center; 
-            margin-bottom: 30px; 
-            border-bottom: 2px solid #e0e0e0; 
-            padding-bottom: 20px;
-        }
-        .header img { 
-            max-width: 100px; 
-            height: auto; 
-            margin-bottom: 10px; 
-            border-radius: 4px;
-        }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 20px;}
+        .header img { max-width: 100px; height: auto; margin-bottom: 10px; border-radius: 4px;}
         .header h1 { color: #2c3e50; font-size: 1.8em; margin: 5px 0 10px; }
         .info-dettagli { font-size: 0.9em; color: #777; font-weight: normal; }
-
         a.back-link { display: inline-block; margin-bottom: 20px; text-decoration: none; color: #3498db; }
         a.back-link:hover { text-decoration: underline; }
-        
         h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 30px;}
-        
-        /* Stile Tabella */
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         th { background-color: #3498db; color: white; font-size: 0.9em; }
         tr:nth-child(even) { background-color: #f9f9f9; }
-        
-        /* Pulsanti */
-        .btn-delete { 
-            background: none; 
-            border: none; 
-            cursor: pointer; 
-            color: #e74c3c; 
-            font-size: 1.2em;
-            padding: 0 0 0 5px; 
-            margin-left: 5px;
-        }
-        .btn-download {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #28a745;
-            font-size: 1.2em;
-            padding: 0;
-            margin-right: 5px;
-        }
+        .btn-delete { background: none; border: none; cursor: pointer; color: #e74c3c; font-size: 1.2em; padding: 0 0 0 5px; margin-left: 5px; }
+        .btn-download { background: none; border: none; cursor: pointer; color: #28a745; font-size: 1.2em; padding: 0; margin-right: 5px;}
         .btn-delete:hover { color: #c0392b; }
         .btn-download:hover { color: #1e7e34; }
-        
-        #bulkDeleteButton {
-            background-color: #e74c3c;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
-            float: right;
-        }
+        #bulkDeleteButton { background-color: #e74c3c; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; float: right;}
         #bulkDeleteButton:hover { background-color: #c0392b; }
-        
-        .table-footer { 
-            overflow: hidden;
-            margin-top: 20px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
-        }
+        .table-footer { overflow: hidden; margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee;}
         #messaggioVuoto { margin-top: 30px; font-size: 1.2em; color: #777; text-align: center;}
     </style>
 </head>
@@ -99,20 +53,37 @@
         </div>
         
         <div class="table-footer">
-            <button id="bulkDeleteButton" onclick="cancellaTutto()">Cancella TUTTI i Preventivi Salvati</button>
+            <button id="bulkDeleteButton" onclick="cancellaTutto()">Cancella TUTTI i Preventivi Salvati dal CLOUD</button>
         </div>
     </div>
 
     <script>
-        const STORAGE_KEY = 'preventivi_storico';
-
-        // Costanti e configurazione necessarie per rigenerare il PDF
-        const CONFIGURAZIONE = {
-            "Carrellone": 2.30,
-            "Centinato": 1.80,
-            "CostoFisso": 300.00,
-            "IVA": 0.22 
+        // === CONFIGURAZIONE FIREBASE INSERITA DALL'UTENTE ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyAPXp7geS7Srr2rWHHqwrJfbze3PoMdLzk",
+            authDomain: "preventivi---de-cillis.firebaseapp.com",
+            projectId: "preventivi---de-cillis",
+            storageBucket: "preventivi---de-cillis.firebasestorage.app",
+            messagingSenderId: "985249210481",
+            appId: "1:985249210481:web:82ab65ea03a58a223fbbd0"
         };
+        // =======================================================================================
+        
+        // Inizializza Firebase
+        let db;
+        try {
+             firebaseConfig.databaseURL = firebaseConfig.databaseURL || `https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com`;
+             firebase.initializeApp(firebaseConfig);
+             db = firebase.database();
+             console.log("Firebase Database Connesso.");
+        } catch (e) {
+             console.error("ERRORE: Impossibile connettersi a Firebase. Controlla la configurazione.", e);
+             alert("ERRORE: Impossibile connettersi al database. I dati potrebbero non essere aggiornati.");
+        }
+        
+        const FIREBASE_PATH = 'preventivi_storico'; 
+
+        const CONFIGURAZIONE = { "Carrellone": 2.30, "Centinato": 1.80, "CostoFisso": 300.00, "IVA": 0.22 };
         const TITOLO_AZIENDA = "AUTOTRASPORTI DE CILLIS";
         const P_IVA = "02574400020";
         const EMAIL = "autotrasportidecillis@gmail.com";
@@ -120,18 +91,14 @@
 
 
         // --- GESTIONE DEL LOGO (2.png) ---
-        function caricaLogoPerPDF() {
+        function gestisciLogoDisplay() {
             const img = document.getElementById('appLogo');
-            
-            // 1. Mostra il logo nella pagina HTML - Assicurati che appaia
-            img.style.display = 'inline-block';
-
-            // 2. Converte in Base64 per il PDF (funzione asincrona)
             const image = new Image();
             image.src = "2.png"; 
             image.crossOrigin = "Anonymous"; 
 
             image.onload = function() {
+                img.style.display = 'inline-block';
                 try {
                     const canvas = document.createElement("canvas");
                     canvas.width = image.naturalWidth;
@@ -139,172 +106,150 @@
                     const ctx = canvas.getContext("2d");
                     ctx.drawImage(image, 0, 0);
                     logoBase64 = canvas.toDataURL("image/png");
-                    console.log("Logo 2.png caricato in Base64 per il PDF.");
                 } catch (e) {
-                    console.error("Errore nel convertire il logo 2.png in Base64 per il PDF. Il PDF verrà generato senza logo.", e);
+                    console.error("Errore nel convertire il logo 2.png in Base64 per il PDF.");
                     logoBase64 = null; 
                 }
             };
             image.onerror = function() {
-                console.error("Logo '2.png' non trovato. Controlla il nome e il percorso del file.");
+                console.error("Logo '2.png' non trovato.");
             };
         }
 
-        // --- Funzione per caricare e visualizzare lo storico ---
+        // --- Funzione per caricare e visualizzare lo storico (DA Firebase) ---
         function caricaStorico() {
-            caricaLogoPerPDF(); // Carica il logo e lo prepara per il PDF
+            gestisciLogoDisplay(); 
+            
+            if (!db) { return; } 
 
-            const storicoJSON = localStorage.getItem(STORAGE_KEY);
-            
-            let storico = [];
-            try {
-                storico = storicoJSON ? JSON.parse(storicoJSON) : [];
-            } catch (e) {
-                console.error("Errore nel parsing dello storico:", e);
-                localStorage.removeItem(STORAGE_KEY);
-                storico = [];
-            }
-            
             const container = document.getElementById('storico-container');
             const messaggioVuoto = document.getElementById('messaggioVuoto');
-
-            if (storico.length === 0) {
-                messaggioVuoto.style.display = 'block';
-                document.getElementById('bulkDeleteButton').style.display = 'none';
-                container.innerHTML = '';
-                return;
-            }
-
             messaggioVuoto.style.display = 'none';
-            document.getElementById('bulkDeleteButton').style.display = 'inline-block';
+            container.innerHTML = '<p style="text-align:center; color:#555;">Caricamento storico in corso...</p>';
+            document.getElementById('bulkDeleteButton').style.display = 'none';
 
-            let html = '<table><thead><tr>';
-            html += '<th>Protocollo</th><th>Data</th><th>Cliente</th><th>Mezzo</th><th>Km</th><th>Prezzo Km Usato</th><th>Totale (€)</th><th>Azione</th>';
-            html += '</tr></thead><tbody>';
 
-            storico.forEach(p => {
-                const prezzoKmDisplay = p.prezzoKmUsato ? p.prezzoKmUsato + ' €' : 'N/D';
-                
-                html += `<tr>`;
-                html += `<td>${p.protocollo}</td>`;
-                html += `<td>${p.data}</td>`;
-                html += `<td>${p.cliente}</td>`;
-                html += `<td>${p.tipoMezzo}</td>`;
-                html += `<td>${p.kmTotali}</td>`;
-                html += `<td>${prezzoKmDisplay}</td>`; 
-                html += `<td><strong>${p.totaleFinale}</strong></td>`;
-                html += `<td>
-                            <button class="btn-download" onclick="scaricaPreventivo('${p.id}')">⬇️</button>
-                            <button class="btn-delete" onclick="cancellaSingolo('${p.id}')">🗑️</button>
-                         </td>`;
-                html += `</tr>`;
-            });
-
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
-
-        // --- FUNZIONE PER SCARICARE SINGOLO PREVENTIVO ---
-        function scaricaPreventivo(idDaScaricareStr) {
-            const idDaScaricare = parseInt(idDaScaricareStr);
-            const storicoJSON = localStorage.getItem(STORAGE_KEY);
-            let storico = storicoJSON ? JSON.parse(storicoJSON) : [];
-            
-            const preventivo = storico.find(p => p.id === idDaScaricare);
-            
-            if (preventivo) {
-                
-                if (!logoBase64) {
-                     console.warn("Logo Base64 non disponibile. Il PDF verrà generato senza logo.");
+            // Ascolta i cambiamenti in tempo reale (on) per aggiornare la tabella
+            db.ref(FIREBASE_PATH).on('value', (snapshot) => {
+                let storico = [];
+                if (snapshot.exists()) {
+                     const datiRaw = snapshot.val();
+                     for (let key in datiRaw) {
+                         storico.push(datiRaw[key]);
+                     }
+                     // Ordina per numero di protocollo progressivo
+                     storico.sort((a, b) => {
+                        const numA = parseInt(a.protocollo.split('/')[1]);
+                        const numB = parseInt(b.protocollo.split('/')[1]);
+                        return numA - numB;
+                     });
                 }
-                
-                generaPDF(preventivo);
-            } else {
-                alert("Preventivo non trovato nello storico.");
-            }
+
+                if (storico.length === 0) {
+                    messaggioVuoto.style.display = 'block';
+                    container.innerHTML = '';
+                    document.getElementById('bulkDeleteButton').style.display = 'none';
+                    return;
+                }
+
+                document.getElementById('bulkDeleteButton').style.display = 'inline-block';
+
+                let html = '<table><thead><tr>';
+                html += '<th>Protocollo</th><th>Data</th><th>Cliente</th><th>Mezzo</th><th>Km</th><th>Prezzo Km Usato</th><th>Totale (€)</th><th>Azione</th>';
+                html += '</tr></thead><tbody>';
+
+                storico.forEach(p => {
+                    const prezzoKmDisplay = p.prezzoKmUsato ? p.prezzoKmUsato + ' €' : 'N/D';
+                    
+                    html += `<tr>`;
+                    html += `<td>${p.protocollo}</td>`;
+                    html += `<td>${p.data}</td>`;
+                    html += `<td>${p.cliente}</td>`;
+                    html += `<td>${p.tipoMezzo}</td>`;
+                    html += `<td>${p.kmTotali}</td>`;
+                    html += `<td>${prezzoKmDisplay}</td>`; 
+                    html += `<td><strong>${p.totaleFinale}</strong></td>`;
+                    html += `<td>
+                                <button class="btn-download" onclick="scaricaPreventivo('${p.id}')">⬇️</button>
+                                <button class="btn-delete" onclick="cancellaSingolo('${p.id}')">🗑️</button>
+                             </td>`;
+                    html += `</tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            });
         }
 
-        // --- FUNZIONE GENERAZIONE PDF ---
+        // --- FUNZIONE PER SCARICARE SINGOLO PREVENTIVO (DA Firebase) ---
+        function scaricaPreventivo(idDaScaricare) {
+            if (!db) { alert("Connessione Firebase non attiva."); return; }
+            
+            // Scarica i dati una sola volta (once)
+            db.ref(FIREBASE_PATH + '/' + idDaScaricare).once('value', (snapshot) => {
+                 const preventivo = snapshot.val();
+
+                 if (preventivo) {
+                    if (!logoBase64) {
+                         console.warn("Logo Base64 non disponibile. Il PDF verrà generato senza logo.");
+                    }
+                    generaPDF(preventivo);
+                 } else {
+                    alert("Preventivo non trovato nello storico Cloud. Ricarica la pagina.");
+                 }
+            });
+        }
+
+        // --- FUNZIONE GENERAZIONE PDF (Non modificato) ---
         function generaPDF(p) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
-            // Calcola i costi a partire dal totale salvato
             const totaleFinale = parseFloat(p.totaleFinale);
+            // Ricalcola il costo base per il PDF
             const costoBase = totaleFinale / (1 + CONFIGURAZIONE.IVA);
             const COSTO_IVA = (totaleFinale - costoBase).toFixed(2);
-            
-            // Usa il prezzo salvato o il default se il campo è mancante
             const prezzoKmUsato = p.prezzoKmUsato || (p.tipoMezzo ? CONFIGURAZIONE[p.tipoMezzo] : 0);
-
             let yPos = 15;
             
-            // LOGO E INTESTAZIONE
-            if (logoBase64) {
-                 doc.addImage(logoBase64, 'PNG', 15, yPos, 40, 40); 
-            }
-
-            // Dati Aziendali
+            if (logoBase64) { doc.addImage(logoBase64, 'PNG', 15, yPos, 40, 40); }
             doc.setFontSize(10);
             doc.text(TITOLO_AZIENDA, 60, yPos + 5);
             doc.text(`P.IVA: ${P_IVA}`, 60, yPos + 10);
             doc.text(`Email: ${EMAIL}`, 60, yPos + 15);
-
-            // Separatore orizzontale
             doc.setDrawColor(200, 200, 200); 
             doc.line(15, 60, 195, 60);
-
-            // Titolo Documento
             doc.setFontSize(18);
             doc.setFont(undefined, 'bold');
             doc.text("Preventivo Autotrasporti De Cillis", doc.internal.pageSize.getWidth() / 2, 70, { align: 'center' });
             doc.setFont(undefined, 'normal');
-            
             yPos = 85;
             doc.setFontSize(12);
-
-            // Info Cliente e Protocollo
             doc.setFont(undefined, 'bold');
             doc.text(`Protocollo N.:`, 20, yPos);
             doc.setFont(undefined, 'normal');
             doc.text(p.protocollo, 55, yPos); yPos += 7;
-
             doc.setFont(undefined, 'bold');
             doc.text(`Cliente:`, 20, yPos);
             doc.setFont(undefined, 'normal');
             doc.text(p.cliente, 40, yPos); yPos += 10;
-            
             doc.text(`Data: ${p.data}`, 20, yPos); yPos += 15;
-
-
-            // Dettagli Calcolo
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
             doc.text("RIEPILOGO COSTI", 20, yPos); 
             doc.setFont(undefined, 'normal'); yPos += 10;
-            
             doc.setFontSize(12);
             doc.text(`Tipo Mezzo: ${p.tipoMezzo}`, 20, yPos); yPos += 7;
             doc.text(`Km Totali A/R: ${p.kmTotali} km`, 20, yPos); yPos += 7;
-            
-            // Mostra il prezzo al Km usato
             doc.text(`Prezzo/Km Applicato: ${parseFloat(prezzoKmUsato).toFixed(2)} €/km`, 20, yPos); yPos += 10;
-            
-            // Tabella costi
             doc.setDrawColor(0, 0, 0);
             doc.line(20, yPos, 190, yPos); 
-
             yPos += 7;
             doc.text(`Costo Base (IVA Escl.):`, 20, yPos);
             doc.text(`${costoBase.toFixed(2)} €`, 190, yPos, { align: 'right' }); yPos += 7;
-            
             doc.text(`Aliquota IVA (${(CONFIGURAZIONE.IVA * 100).toFixed(0)}%):`, 20, yPos);
             doc.text(`${COSTO_IVA} €`, 190, yPos, { align: 'right' }); yPos += 7;
-            
             doc.line(20, yPos, 190, yPos); 
-
             yPos += 7;
-            // Totale Finale in grande
             doc.setFontSize(16);
             doc.setFont(undefined, 'bold');
             doc.text("TOTALE FINALE (IVA INCLUSA):", 20, yPos);
@@ -312,43 +257,50 @@
             doc.setFont(undefined, 'normal'); yPos += 10;
             doc.line(20, yPos, 190, yPos);
             
-            // Salva il PDF (aggiungo "_REPRINT" al nome per distinguerlo)
             const nomeFile = `Preventivo_N${p.protocollo.replace('/', '-')}_${p.cliente.replace(/ /g, '_')}_REPRINT.pdf`;
             doc.save(nomeFile);
         }
 
-        // --- Funzioni di gestione storico ---
-        function cancellaSingolo(idDaCancellareStr) {
-            if (!confirm("Sei sicuro di voler cancellare questo preventivo?")) {
+        // --- Funzioni di gestione storico (CANCELLAZIONE da Firebase) ---
+        function cancellaSingolo(idDaCancellare) {
+            if (!db) { alert("Connessione Firebase non attiva."); return; }
+            if (!confirm("Sei sicuro di voler cancellare questo preventivo dal CLOUD?")) {
                 return;
             }
 
-            const idDaCancellare = parseInt(idDaCancellareStr);
-
-            const storicoJSON = localStorage.getItem(STORAGE_KEY);
-            let storico = storicoJSON ? JSON.parse(storicoJSON) : [];
-
-            const nuovoStorico = storico.filter(p => p.id !== idDaCancellare);
-            
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(nuovoStorico));
-            
-            caricaStorico(); 
+            // Rimuove il singolo nodo dal database
+            db.ref(FIREBASE_PATH + '/' + idDaCancellare).remove()
+                .then(() => {
+                    alert("Preventivo cancellato dal Cloud.");
+                    // L'evento on('value') ricaricherà automaticamente la tabella
+                })
+                .catch((error) => {
+                    alert("Errore durante la cancellazione. Controlla la console.");
+                    console.error("Errore cancellazione:", error);
+                });
         }
         
         function cancellaTutto() {
-            const conferma1 = confirm("SEI SICURO di voler cancellare TUTTI i preventivi salvati?");
+            if (!db) { alert("Connessione Firebase non attiva."); return; }
+            const conferma1 = confirm("SEI SICURO di voler cancellare TUTTI i preventivi salvati dal CLOUD?");
             if (!conferma1) return;
 
-            const conferma2 = confirm("ULTIMA CONFERMA: Cliccando OK, tutti i preventivi andranno persi. Sei assolutamente sicuro?");
+            const conferma2 = confirm("ULTIMA CONFERMA: Cliccando OK, tutti i preventivi andranno persi su TUTTI i dispositivi.");
             if (!conferma2) return;
 
-            localStorage.removeItem(STORAGE_KEY);
-            
-            alert("Tutti i preventivi sono stati cancellati.");
-            
-            caricaStorico();
+            // Rimuove l'intera cartella dello storico
+            db.ref(FIREBASE_PATH).set(null)
+                .then(() => {
+                    alert("Tutti i preventivi sono stati cancellati dal Cloud.");
+                    // L'evento on('value') ricaricherà automaticamente la tabella
+                })
+                .catch((error) => {
+                    alert("Errore durante la cancellazione totale. Controlla la console.");
+                    console.error("Errore cancellazione totale:", error);
+                });
         }
 
+        document.addEventListener('DOMContentLoaded', gestisciLogoDisplay);
         document.addEventListener('DOMContentLoaded', caricaStorico);
 
     </script>
