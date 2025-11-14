@@ -8,10 +8,12 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
     <style>
+        /* Stili CSS aggiornati per una migliore leggibilità */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f7f6; color: #333; line-height: 1.6; }
         .container { max-width: 850px; margin: 30px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
         .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 20px;}
-        .header img { max-width: 120px; height: auto; margin-bottom: 15px; border-radius: 4px; }
+        /* LOGO VISIBILE NELL'INTERFACCIA */
+        .header img { max-width: 120px; height: auto; margin-bottom: 15px; border-radius: 4px; } 
         .header h1 { color: #2c3e50; font-size: 1.8em; margin: 5px 0 10px; }
         .info-dettagli { font-size: 0.9em; color: #777; font-weight: normal; }
         .protocollo-group { display: flex; align-items: center; margin-bottom: 15px; font-size: 1.1em; padding: 5px 0; border-bottom: 1px dashed #e0e0e0; text-align: left;}
@@ -37,10 +39,10 @@
 
     <div class="container">
         <div class="header">
-            <img src="1.png" alt="Logo Autotrasporti De Cillis" id="appLogo" style="display: none;">
+            <img src="1.png" alt="Logo Autotrasporti De Cillis" id="appLogo">
             <h1>Preventivo Autotrasporti De Cillis</h1>
             <div class="info-dettagli">
-                <strong>P.IVA:</strong> 02574400020 | 
+                <strong>P.IVA:</strong> 02574400010 | 
                 <strong>Email:</strong> autotrasportidecillis@gmail.com
             </div>
         </div>
@@ -57,14 +59,14 @@
             <label for="denominazione_cliente">Denominazione Cliente:</label>
             <input type="text" id="denominazione_cliente">
             
-            <label for="tratta_da">Tratta - Da (Città/Indirizzo):</label>
-            <input type="text" id="tratta_da" placeholder="Es: Milano">
+            <label for="tratta_da">Luogo di Partenza:</label>
+            <input type="text" id="tratta_da" placeholder="Es: Milano, Via Roma 10 (opzionale)">
             
-            <label for="tratta_a">Tratta - A (Città/Indirizzo):</label>
-            <input type="text" id="tratta_a" placeholder="Es: Roma">
+            <label for="tratta_a">Luogo di Destinazione/Arrivo:</label>
+            <input type="text" id="tratta_a" placeholder="Es: Napoli, Piazza Garibaldi 5 (opzionale)">
             
             <label for="km_totali">Km Totali A/R (Inserimento Manuale):</label>
-            <input type="number" id="km_totali" value="0" placeholder="Inserisci il totale dei Km A/R">
+            <input type="number" id="km_totali" value="0" placeholder="Inserisci il totale dei Km A/R" step="1">
             
             <label for="tipo_mezzo">Tipo Mezzo:</label>
             <select id="tipo_mezzo">
@@ -86,7 +88,7 @@
     </div>
 
     <script>
-        // === CONFIGURAZIONE FIREBASE INSERITA DALL'UTENTE (NON MODIFICARE SE NON CAMBI IL PROGETTO CLOUD) ===
+        // === CONFIGURAZIONE FIREBASE INSERITA DALL'UTENTE ===
         const firebaseConfig = {
             apiKey: "AIzaSyAPXp7geS7Srr2rWHHqwrJfbze3PoMdLzk",
             authDomain: "preventivi---de-cillis.firebaseapp.com",
@@ -95,12 +97,11 @@
             messagingSenderId: "985249210481",
             appId: "1:985249210481:web:82ab65ea03a5a8223fbbd0"
         };
-        // ====================================================================================================
+        // ===================================================
         
         // Inizializza Firebase
         let db;
         try {
-             // Il databaseURL non è presente nella configurazione, lo inferiamo da authDomain
              firebaseConfig.databaseURL = firebaseConfig.databaseURL || `https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com`;
              firebase.initializeApp(firebaseConfig);
              db = firebase.database();
@@ -112,13 +113,12 @@
 
         const FIREBASE_PATH = 'preventivi_storico'; 
         const TITOLO_AZIENDA = "AUTOTRASPORTI DE CILLIS";
-        const P_IVA = "02574400020";
+        const P_IVA = "02574400010"; 
         const EMAIL = "autotrasportidecillis@gmail.com";
 
         // Costi fissi e variabili per il calcolo interno
         const CONFIGURAZIONE = { "Carrellone": 2.30, "Centinato": 1.80, "CostoFisso": 300.00, "IVA": 0.22 };
 
-        let logoBase64 = null;
         let currentProtocollo = ''; 
         let currentProtocolloCount = 0; 
         let currentTotaleFinale = 0;
@@ -130,11 +130,28 @@
 
         // --- INIZIALIZZAZIONE ---
         function inizializzaApp() {
-            caricaLogoBase64(); 
+            caricaLogoBase64();
             caricaContatore(); 
             aggiornaProtocolloDisplay();
         }
         
+        function caricaLogoBase64() {
+             // Funzione usata solo per assicurare che il logo sia visibile nell'interfaccia HTML
+            const imgEl = document.getElementById('appLogo');
+            const image = new Image();
+            // ATTENZIONE: se il tuo file è 1.jpg, cambia "1.png" in "1.jpg"
+            image.src = "1.png"; 
+            image.crossOrigin = "Anonymous";
+            image.onload = function() {
+                imgEl.style.display = 'inline-block';
+            };
+            image.onerror = function() {
+                // Se non trova 1.png, mostra un errore in console ma mantiene il layout
+                console.error("Logo '1.png' non trovato. Assicurati che il file sia presente nella directory.");
+            };
+        }
+
+
         // --- LOGICA CONTATORE PROTOCOLLO (Basata su Firebase) ---
         function caricaContatore() {
             if (!db) { return; } 
@@ -172,7 +189,7 @@
             const oggi = new Date();
             const anno = oggi.getFullYear();
             const num = Math.max(1, parseInt(numero)); 
-            const numeroProgressivo = num.toString().padStart(3, '0');
+            const numeroProgressivo = num.toString().padStart(3, '0'); // Formatta a 3 cifre
             return `${anno}/${numeroProgressivo}`;
         }
 
@@ -215,17 +232,19 @@
             aggiornaProtocolloDisplay();
 
             currentTipoMezzo = document.getElementById('tipo_mezzo').value;
-            // Legge il KM inserito manualmente
             currentKmTotali = parseFloat(document.getElementById('km_totali').value); 
             currentCliente = document.getElementById('denominazione_cliente').value.trim();
+            const trattaDa = document.getElementById('tratta_da').value.trim();
+            const trattaA = document.getElementById('tratta_a').value.trim();
             const prezzoVariabileInput = parseFloat(document.getElementById('prezzo_km_variabile').value);
 
-            if (!currentCliente) { 
-                alert("Per favore, inserisci la Denominazione Cliente prima di calcolare."); 
+            // Validazione essenziale
+            if (!currentCliente || !trattaDa || !trattaA) { 
+                alert("Per favore, inserisci Denominazione Cliente, Luogo di Partenza e Destinazione prima di calcolare."); 
                 return; 
             }
             if (currentKmTotali <= 0 || isNaN(currentKmTotali)) { 
-                alert("Per favore, inserisci i Km Totali A/R."); 
+                alert("Per favore, inserisci i Km Totali A/R (deve essere un numero positivo)."); 
                 return; 
             }
 
@@ -236,12 +255,12 @@
                 currentPrezzoKmUsato = CONFIGURAZIONE[currentTipoMezzo];
             }
 
-            // Calcolo Costo Base
+            // Calcolo Costo Base: Costo Fisso se KM <= 100, altrimenti Costo a KM
             currentCostoBase = (currentKmTotali <= 100) 
                 ? CONFIGURAZIONE.CostoFisso 
                 : currentKmTotali * currentPrezzoKmUsato;
 
-            // Calcolo Totale Finale
+            // Calcolo Totale Finale (IVA inclusa)
             currentTotaleFinale = currentCostoBase * (1 + CONFIGURAZIONE.IVA);
             
             currentCostoBase = parseFloat(currentCostoBase.toFixed(2));
@@ -254,14 +273,16 @@
 
         // --- SALVA e ARCHIVIA (Su Firebase) ---
         function salvaArchiviaPreventivo() {
-            if (currentTotaleFinale === 0 || !currentCliente || !db) { 
-                alert("Per favore, calcola il preventivo e assicurati che la connessione Cloud sia attiva."); 
+            // Re-valida prima di salvare
+            if (currentTotaleFinale === 0 || !currentCliente || !document.getElementById('tratta_da').value.trim() || !db) { 
+                alert("Per favorc, calcola il preventivo e assicurati che la connessione Cloud sia attiva."); 
                 return; 
             }
 
             const protocolloDaSalvare = currentProtocollo; 
             const newKey = db.ref(FIREBASE_PATH).push().key; 
             
+            // Crea l'oggetto record con tutti i dati necessari
             const preventivoRecord = {
                 id: newKey, 
                 protocollo: protocolloDaSalvare, 
@@ -279,14 +300,14 @@
             db.ref(FIREBASE_PATH + '/' + newKey).set(preventivoRecord)
                 .then(() => {
                     try {
-                         generaPDF();
+                         generaPDF(preventivoRecord); // Passa i dati salvati al PDF
                          alert(`Preventivo N. ${protocolloDaSalvare} salvato sul Cloud e PDF scaricato con successo.`);
                     } catch (e) {
                          alert(`ATTENZIONE: Preventivo N. ${protocolloDaSalvare} salvato sul Cloud, ma il download del PDF è fallito. Controlla lo storico.`);
                          console.error("Errore nella generazione PDF:", e);
                     }
 
-                    // Pulisci i campi dopo il salvataggio
+                    // Pulisci i campi dopo il salvataggio per un nuovo preventivo
                     document.getElementById('km_totali').value = 0;
                     document.getElementById('denominazione_cliente').value = '';
                     document.getElementById('prezzo_km_variabile').value = ''; 
@@ -295,8 +316,7 @@
                     document.getElementById('risultato').innerHTML = "Totale Finale (IVA Incl.): 0,00 €";
                     document.getElementById('salvaButton').style.display = 'none';
                     
-                    // Ricarica il contatore per il prossimo preventivo
-                    caricaContatore();
+                    cambiaProtocollo(1);
 
                 })
                 .catch((error) => {
@@ -305,106 +325,136 @@
                 });
         }
         
-        // --- GESTIONE LOGO BASE64 e PDF (con compressione FAST) ---
-        function caricaLogoBase64() {
-            const imgEl = document.getElementById('appLogo');
-            imgEl.style.display = 'none';
-            const image = new Image();
-            image.src = "1.png"; 
-            image.crossOrigin = "Anonymous";
-            image.onload = function() {
-                imgEl.style.display = 'inline-block';
-                const canvas = document.createElement("canvas");
-                canvas.width = image.naturalWidth;
-                canvas.height = image.naturalHeight;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(image, 0, 0);
-                try {
-                    logoBase64 = canvas.toDataURL("image/jpeg", 0.6); 
-                } catch (e) {
-                    console.error("Errore nel convertire il logo 1.png in Base64 per il PDF.");
-                }
-            };
-            image.onerror = function() {
-                imgEl.src = "./1.png";
-                imgEl.onload = function() { imgEl.style.display = 'inline-block'; }
-                imgEl.onerror = function() { console.error("Logo '1.png' non trovato."); }
-            };
-        }
-
-        function generaPDF() {
+        // --- GESTIONE PDF (Impaginazione Definitiva e Allineamenti Verticali) ---
+        
+        function generaPDF(record) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            // Calcolo IVA e Tratta
-            const COSTO_IVA = (currentTotaleFinale - currentCostoBase).toFixed(2);
-            const trattaDa = document.getElementById('tratta_da').value.trim();
-            const trattaA = document.getElementById('tratta_a').value.trim();
+            const docWidth = doc.internal.pageSize.getWidth();
+            const MARGINE_X = 20;
+            // Nessun offset fisso per i valori, dato che sono sotto le etichette
+            const LARGHEZZA_MAX_TESTO = docWidth - (MARGINE_X * 2);
+            
+            // Dati dal record salvato
+            const cliente = record.cliente;
+            const protocollo = record.protocollo;
+            const trattaDa = record.trattaDa;
+            const trattaA = record.trattaA;
+            const totaleFinale = parseFloat(record.totaleFinale);
+            
+            // Ricalcola costo base e IVA (usando il totale finale salvato per maggiore precisione)
+            const costoBase = totaleFinale / (1 + CONFIGURAZIONE.IVA);
+            const COSTO_IVA = (totaleFinale - costoBase).toFixed(2);
+            
             let yPos = 15;
             
-            // Intestazione con Logo
-            if (logoBase64) { 
-                doc.addImage(logoBase64, 'JPEG', 15, yPos, 40, 40, 'logo', 'FAST'); 
-            }
-            doc.setFontSize(10);
-            doc.text(TITOLO_AZIENDA, 60, yPos + 5);
-            doc.text(`P.IVA: ${P_IVA}`, 60, yPos + 10);
-            doc.text(`Email: ${EMAIL}`, 60, yPos + 15);
-            doc.setDrawColor(200, 200, 200); 
-            doc.line(15, 60, 195, 60);
-            doc.setFontSize(18);
-            doc.setFont(undefined, 'bold');
-            doc.text("Preventivo Autotrasporti De Cillis", doc.internal.pageSize.getWidth() / 2, 70, { align: 'center' });
-            doc.setFont(undefined, 'normal');
-            yPos = 85;
-            
-            // Dettagli Cliente e Protocollo
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'bold');
-            doc.text(`Protocollo N.:`, 20, yPos);
-            doc.setFont(undefined, 'normal');
-            doc.text(currentProtocollo, 55, yPos); yPos += 7;
-            doc.setFont(undefined, 'bold');
-            doc.text(`Cliente:`, 20, yPos);
-            doc.setFont(undefined, 'normal');
-            doc.text(currentCliente, 40, yPos); yPos += 10;
-            
-            // Dettagli Tratta
-            doc.setFont(undefined, 'bold');
-            doc.text(`Tratta:`, 20, yPos); 
-            doc.setFont(undefined, 'normal');
-            doc.text(`Da ${trattaDa}`, 45, yPos); yPos += 7;
-            doc.text(`A ${trattaA}`, 45, yPos); yPos += 10;
-            
-            doc.text(`Data: ${new Date().toLocaleDateString('it-IT')}`, 20, yPos); yPos += 15;
-
-            // INIZIO SEZIONE COSTI CONFIDENZIALE (MOSTRA SOLO I TOTALI)
+            // 1. Intestazione Centrata
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
-            doc.text("RIEPILOGO COSTI", 20, yPos); 
+            doc.text(TITOLO_AZIENDA, docWidth / 2, yPos, { align: 'center' });
+            yPos += 7;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`P.IVA: ${P_IVA}`, docWidth / 2, yPos, { align: 'center' });
+            yPos += 5;
+            doc.text(`Email: ${EMAIL}`, docWidth / 2, yPos, { align: 'center' });
+
+            yPos += 8; // Spazio dopo l'intestazione
+            doc.setDrawColor(200, 200, 200); 
+            doc.line(15, yPos, 195, yPos);
+            
+            // 2. Titolo Principale (SOLO "Preventivo", centrato)
+            doc.setFontSize(18);
+            doc.setFont(undefined, 'bold');
+            yPos += 15;
+            doc.text("Preventivo", docWidth / 2, yPos, { align: 'center' });
+            doc.setFont(undefined, 'normal');
+            yPos += 20; // Spazio pulito prima dei dettagli
+            
+            // 3. Dettagli Cliente e Protocollo (Layout Verticale)
+            doc.setFontSize(12);
+            
+            // Protocollo
+            doc.setFont(undefined, 'bold');
+            doc.text(`Protocollo N.`, MARGINE_X, yPos);
+            yPos += 5;
+            doc.setFont(undefined, 'normal');
+            doc.text(protocollo, MARGINE_X, yPos); 
+            yPos += 10;
+            
+            // Cliente
+            doc.setFont(undefined, 'bold');
+            doc.text(`Cliente`, MARGINE_X, yPos);
+            yPos += 5;
+            doc.setFont(undefined, 'normal');
+            // Gestione del testo Cliente se è molto lungo
+            const clienteLines = doc.splitTextToSize(cliente, LARGHEZZA_MAX_TESTO);
+            doc.text(clienteLines, MARGINE_X, yPos); 
+            yPos += (clienteLines.length * 5) + 5; 
+            
+            // Data
+            doc.setFont(undefined, 'bold');
+            doc.text(`Data`, MARGINE_X, yPos); 
+            yPos += 5;
+            doc.setFont(undefined, 'normal');
+            doc.text(record.data, MARGINE_X, yPos); 
+            yPos += 10;
+            
+            // 4. Dettagli Tratta (Layout Verticale)
+            
+            doc.setFont(undefined, 'bold');
+            doc.text(`Tratta`, MARGINE_X, yPos);
+            doc.setFont(undefined, 'normal');
+            yPos += 7;
+
+            // Partenza
+            doc.setFont(undefined, 'bold');
+            doc.text(`  Partenza`, MARGINE_X, yPos); 
+            yPos += 5;
+            doc.setFont(undefined, 'normal');
+            const partenzaLines = doc.splitTextToSize(trattaDa, LARGHEZZA_MAX_TESTO);
+            doc.text(partenzaLines, MARGINE_X, yPos); 
+            yPos += (partenzaLines.length * 5) + 5; 
+            
+            // Arrivo
+            doc.setFont(undefined, 'bold');
+            doc.text(`  Arrivo`, MARGINE_X, yPos); 
+            yPos += 5;
+            doc.setFont(undefined, 'normal');
+            const arrivoLines = doc.splitTextToSize(trattaA, LARGHEZZA_MAX_TESTO);
+            doc.text(arrivoLines, MARGINE_X, yPos); 
+            yPos += (arrivoLines.length * 5) + 15; // Spazio prima dei costi
+            
+            // 5. INIZIO SEZIONE COSTI
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text("RIEPILOGO COSTI", MARGINE_X, yPos); 
             doc.setFont(undefined, 'normal'); yPos += 10;
             doc.setFontSize(12);
             
+            const FINE_MARGINE_X = docWidth - MARGINE_X;
+            
             // PRIMO TOTALE (IVA ESCLUSA)
-            doc.text(`Totale Base (IVA Escl.):`, 20, yPos);
-            doc.text(`${currentCostoBase.toFixed(2)} €`, 190, yPos, { align: 'right' }); yPos += 7;
+            doc.text(`Totale Base (IVA Escl.):`, MARGINE_X, yPos);
+            doc.text(`${costoBase.toFixed(2)} €`, FINE_MARGINE_X, yPos, { align: 'right' }); yPos += 7;
             
             // IVA
-            doc.text(`Aliquota IVA (${(CONFIGURAZIONE.IVA * 100).toFixed(0)}%):`, 20, yPos);
-            doc.text(`${COSTO_IVA} €`, 190, yPos, { align: 'right' }); yPos += 7;
+            doc.text(`Aliquota IVA (${(CONFIGURAZIONE.IVA * 100).toFixed(0)}%):`, MARGINE_X, yPos);
+            doc.text(`${COSTO_IVA} €`, FINE_MARGINE_X, yPos, { align: 'right' }); yPos += 7;
             
-            doc.line(20, yPos, 190, yPos); 
+            doc.line(MARGINE_X, yPos, FINE_MARGINE_X, yPos); 
             yPos += 7;
             
             // TOTALE FINALE (IVA INCLUSA)
             doc.setFontSize(16);
             doc.setFont(undefined, 'bold');
-            doc.text("TOTALE FINALE (IVA INCLUSA):", 20, yPos);
-            doc.text(`${currentTotaleFinale.toFixed(2)} €`, 190, yPos, { align: 'right' }); 
+            doc.text("TOTALE FINALE (IVA INCLUSA):", MARGINE_X, yPos);
+            doc.text(`${totaleFinale.toFixed(2)} €`, FINE_MARGINE_X, yPos, { align: 'right' }); 
             doc.setFont(undefined, 'normal'); yPos += 10;
-            doc.line(20, yPos, 190, yPos);
-            // FINE SEZIONE COSTI CONFIDENZIALE
+            doc.line(MARGINE_X, yPos, FINE_MARGINE_X, yPos);
+            // FINE SEZIONE COSTI
             
-            const nomeFile = `Preventivo_N${currentProtocollo.replace('/', '-')}_${currentCliente.replace(/ /g, '_')}.pdf`;
+            const nomeFile = `Preventivo_N${protocollo.replace('/', '-')}_${cliente.replace(/ /g, '_')}.pdf`;
             doc.save(nomeFile);
         }
     </script>
