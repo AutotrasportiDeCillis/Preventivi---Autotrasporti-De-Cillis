@@ -23,6 +23,7 @@
         .input-group { padding: 20px 0; margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
         select, input[type="number"], input[type="text"] { width: calc(100% - 22px); padding: 12px; margin-bottom: 20px; border: 1px solid #c0c0c0; border-radius: 6px; box-sizing: border-box; font-size: 1em; background-color: #fff; }
+        #km_totali { background-color: #f7e6ff; } /* Colore per campo Km Manuale */
         #prezzo_km_variabile { background-color: #fff3e0; }
         button { padding: 12px 20px; background-color: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; margin-right: 15px; transition: background-color 0.3s; }
         button:hover { background-color: #2980b9; }
@@ -55,13 +56,21 @@
         <div class="input-group">
             <label for="denominazione_cliente">Denominazione Cliente:</label>
             <input type="text" id="denominazione_cliente">
+            
+            <label for="tratta_da">Tratta - Da (Città/Indirizzo):</label>
+            <input type="text" id="tratta_da" placeholder="Es: Milano">
+            
+            <label for="tratta_a">Tratta - A (Città/Indirizzo):</label>
+            <input type="text" id="tratta_a" placeholder="Es: Roma">
+            
+            <label for="km_totali">Km Totali A/R (Inserimento Manuale):</label>
+            <input type="number" id="km_totali" value="0" placeholder="Inserisci il totale dei Km A/R">
+            
             <label for="tipo_mezzo">Tipo Mezzo:</label>
             <select id="tipo_mezzo">
                 <option value="Carrellone">Carrellone</option>
                 <option value="Centinato">Centinato</option>
             </select>
-            <label for="km_totali">Km Totali A/R:</label>
-            <input type="number" id="km_totali" value="0">
             <label for="prezzo_km_variabile">Prezzo al Km Variabile (€/km) (Opzionale):</label>
             <input type="number" id="prezzo_km_variabile" placeholder="Lascia vuoto per usare il prezzo standard" step="0.01">
         </div>
@@ -77,16 +86,16 @@
     </div>
 
     <script>
-        // === CONFIGURAZIONE FIREBASE INSERITA DALL'UTENTE ===
+        // === CONFIGURAZIONE FIREBASE INSERITA DALL'UTENTE (NON MODIFICARE SE NON CAMBI IL PROGETTO CLOUD) ===
         const firebaseConfig = {
             apiKey: "AIzaSyAPXp7geS7Srr2rWHHqwrJfbze3PoMdLzk",
             authDomain: "preventivi---de-cillis.firebaseapp.com",
             projectId: "preventivi---de-cillis",
             storageBucket: "preventivi---de-cillis.firebasestorage.app",
             messagingSenderId: "985249210481",
-            appId: "1:985249210481:web:82ab65ea03a58a223fbbd0"
+            appId: "1:985249210481:web:82ab65ea03a5a8223fbbd0"
         };
-        // ======================================================
+        // ====================================================================================================
         
         // Inizializza Firebase
         let db;
@@ -98,8 +107,7 @@
              console.log("Firebase Database Connesso.");
         } catch (e) {
              console.error("ERRORE: Impossibile connettersi a Firebase. Controlla la configurazione o le regole del database.", e);
-             // Se fallisce, avvisiamo l'utente che la sincronizzazione non funzionerà
-             alert("ERRORE: Impossibile connettersi al database Cloud. Lo storico non verrà sincronizzato.");
+             console.warn("Attenzione: Connessione Cloud fallita. Lo storico non verrà sincronizzato.");
         }
 
         const FIREBASE_PATH = 'preventivi_storico'; 
@@ -107,6 +115,7 @@
         const P_IVA = "02574400020";
         const EMAIL = "autotrasportidecillis@gmail.com";
 
+        // Costi fissi e variabili per il calcolo interno
         const CONFIGURAZIONE = { "Carrellone": 2.30, "Centinato": 1.80, "CostoFisso": 300.00, "IVA": 0.22 };
 
         let logoBase64 = null;
@@ -123,13 +132,13 @@
         function inizializzaApp() {
             caricaLogoBase64(); 
             caricaContatore(); 
+            aggiornaProtocolloDisplay();
         }
         
         // --- LOGICA CONTATORE PROTOCOLLO (Basata su Firebase) ---
         function caricaContatore() {
             if (!db) { return; } 
 
-            // Legge tutti i preventivi per trovare il numero di protocollo più alto
             db.ref(FIREBASE_PATH).once('value', (snapshot) => {
                 let maxCount = 0;
                 
@@ -137,7 +146,6 @@
                     const storico = snapshot.val();
                     for (let key in storico) {
                          const p = storico[key];
-                         // Estrae solo il numero dal protocollo (es. '2025/005' -> '005')
                          const protocolloPart = p.protocollo.split('/')[1]; 
                          if (protocolloPart) {
                              const count = parseInt(protocolloPart);
@@ -148,7 +156,6 @@
                     }
                 }
                 
-                // Imposta il protocollo corrente come il massimo trovato + 1
                 currentProtocolloCount = Math.max(1, maxCount + 1);
                 document.getElementById('protocolloNumeroInput').value = currentProtocolloCount;
                 aggiornaProtocolloDisplay();
@@ -189,7 +196,7 @@
         function aggiornaProtocollo() { aggiornaProtocolloDisplay(); }
 
         function resetProtocollo() {
-            if (!db) { alert("Connessione Firebase non attiva. Controlla la console per gli errori."); return; }
+            if (!db) { console.error("Connessione Firebase non attiva."); return; }
             if (confirm("ATTENZIONE: Sei sicuro di voler ELIMINARE TUTTO lo storico preventivi dal Cloud? Questa azione è irreversibile su tutti i dispositivi.")) {
                 db.ref(FIREBASE_PATH).set(null)
                     .then(() => {
@@ -203,28 +210,38 @@
             }
         }
         
-        // --- CALCOLO ---
+        // --- CALCOLO PREVENTIVO ---
         function calcolaPreventivo() {
             aggiornaProtocolloDisplay();
 
             currentTipoMezzo = document.getElementById('tipo_mezzo').value;
-            currentKmTotali = parseFloat(document.getElementById('km_totali').value);
+            // Legge il KM inserito manualmente
+            currentKmTotali = parseFloat(document.getElementById('km_totali').value); 
             currentCliente = document.getElementById('denominazione_cliente').value.trim();
             const prezzoVariabileInput = parseFloat(document.getElementById('prezzo_km_variabile').value);
 
-            if (!currentCliente) { alert("Per favore, inserisci la Denominazione Cliente prima di calcolare."); return; }
-            if (currentKmTotali < 0 || isNaN(currentKmTotali)) { alert("Inserisci un valore valido per i Km."); return; }
+            if (!currentCliente) { 
+                alert("Per favore, inserisci la Denominazione Cliente prima di calcolare."); 
+                return; 
+            }
+            if (currentKmTotali <= 0 || isNaN(currentKmTotali)) { 
+                alert("Per favore, inserisci i Km Totali A/R."); 
+                return; 
+            }
 
+            // Determina il prezzo al KM da usare
             if (!isNaN(prezzoVariabileInput) && prezzoVariabileInput > 0) {
                 currentPrezzoKmUsato = prezzoVariabileInput;
             } else {
                 currentPrezzoKmUsato = CONFIGURAZIONE[currentTipoMezzo];
             }
 
+            // Calcolo Costo Base
             currentCostoBase = (currentKmTotali <= 100) 
                 ? CONFIGURAZIONE.CostoFisso 
                 : currentKmTotali * currentPrezzoKmUsato;
 
+            // Calcolo Totale Finale
             currentTotaleFinale = currentCostoBase * (1 + CONFIGURAZIONE.IVA);
             
             currentCostoBase = parseFloat(currentCostoBase.toFixed(2));
@@ -243,7 +260,6 @@
             }
 
             const protocolloDaSalvare = currentProtocollo; 
-            // Genera una chiave univoca (ID) per il record nel database
             const newKey = db.ref(FIREBASE_PATH).push().key; 
             
             const preventivoRecord = {
@@ -254,7 +270,9 @@
                 tipoMezzo: currentTipoMezzo,
                 kmTotali: currentKmTotali.toFixed(0),
                 totaleFinale: currentTotaleFinale.toFixed(2),
-                prezzoKmUsato: currentPrezzoKmUsato.toFixed(2) 
+                prezzoKmUsato: currentPrezzoKmUsato.toFixed(2),
+                trattaDa: document.getElementById('tratta_da').value.trim(),
+                trattaA: document.getElementById('tratta_a').value.trim(),
             };
 
             // Salva il record sul Cloud
@@ -272,6 +290,8 @@
                     document.getElementById('km_totali').value = 0;
                     document.getElementById('denominazione_cliente').value = '';
                     document.getElementById('prezzo_km_variabile').value = ''; 
+                    document.getElementById('tratta_da').value = '';
+                    document.getElementById('tratta_a').value = '';
                     document.getElementById('risultato').innerHTML = "Totale Finale (IVA Incl.): 0,00 €";
                     document.getElementById('salvaButton').style.display = 'none';
                     
@@ -285,7 +305,7 @@
                 });
         }
         
-        // --- GESTIONE LOGO BASE64 e PDF (AGGIUNTA COMPRESSIONE 'FAST') ---
+        // --- GESTIONE LOGO BASE64 e PDF (con compressione FAST) ---
         function caricaLogoBase64() {
             const imgEl = document.getElementById('appLogo');
             imgEl.style.display = 'none';
@@ -300,7 +320,7 @@
                 const ctx = canvas.getContext("2d");
                 ctx.drawImage(image, 0, 0);
                 try {
-                    logoBase64 = canvas.toDataURL("image/png");
+                    logoBase64 = canvas.toDataURL("image/jpeg", 0.6); 
                 } catch (e) {
                     console.error("Errore nel convertire il logo 1.png in Base64 per il PDF.");
                 }
@@ -315,12 +335,15 @@
         function generaPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            // Calcolo IVA e Tratta
             const COSTO_IVA = (currentTotaleFinale - currentCostoBase).toFixed(2);
+            const trattaDa = document.getElementById('tratta_da').value.trim();
+            const trattaA = document.getElementById('tratta_a').value.trim();
             let yPos = 15;
             
+            // Intestazione con Logo
             if (logoBase64) { 
-                // *** AGGIUNTO IL PARAMETRO DI COMPRESSIONE 'FAST' ***
-                doc.addImage(logoBase64, 'PNG', 15, yPos, 40, 40, 'logo', 'FAST'); 
+                doc.addImage(logoBase64, 'JPEG', 15, yPos, 40, 40, 'logo', 'FAST'); 
             }
             doc.setFontSize(10);
             doc.text(TITOLO_AZIENDA, 60, yPos + 5);
@@ -333,6 +356,8 @@
             doc.text("Preventivo Autotrasporti De Cillis", doc.internal.pageSize.getWidth() / 2, 70, { align: 'center' });
             doc.setFont(undefined, 'normal');
             yPos = 85;
+            
+            // Dettagli Cliente e Protocollo
             doc.setFontSize(12);
             doc.setFont(undefined, 'bold');
             doc.text(`Protocollo N.:`, 20, yPos);
@@ -342,35 +367,46 @@
             doc.text(`Cliente:`, 20, yPos);
             doc.setFont(undefined, 'normal');
             doc.text(currentCliente, 40, yPos); yPos += 10;
+            
+            // Dettagli Tratta
+            doc.setFont(undefined, 'bold');
+            doc.text(`Tratta:`, 20, yPos); 
+            doc.setFont(undefined, 'normal');
+            doc.text(`Da ${trattaDa}`, 45, yPos); yPos += 7;
+            doc.text(`A ${trattaA}`, 45, yPos); yPos += 10;
+            
             doc.text(`Data: ${new Date().toLocaleDateString('it-IT')}`, 20, yPos); yPos += 15;
+
+            // INIZIO SEZIONE COSTI CONFIDENZIALE (MOSTRA SOLO I TOTALI)
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
             doc.text("RIEPILOGO COSTI", 20, yPos); 
             doc.setFont(undefined, 'normal'); yPos += 10;
             doc.setFontSize(12);
-            doc.text(`Tipo Mezzo: ${currentTipoMezzo}`, 20, yPos); yPos += 7;
-            doc.text(`Km Totali A/R: ${currentKmTotali.toFixed(0)} km`, 20, yPos); yPos += 7;
-            doc.text(`Prezzo/Km Applicato: ${currentPrezzoKmUsato.toFixed(2)} €/km`, 20, yPos); yPos += 10;
-            doc.setDrawColor(0, 0, 0);
-            doc.line(20, yPos, 190, yPos); 
-            yPos += 7;
-            doc.text(`Costo Base (IVA Escl.):`, 20, yPos);
+            
+            // PRIMO TOTALE (IVA ESCLUSA)
+            doc.text(`Totale Base (IVA Escl.):`, 20, yPos);
             doc.text(`${currentCostoBase.toFixed(2)} €`, 190, yPos, { align: 'right' }); yPos += 7;
+            
+            // IVA
             doc.text(`Aliquota IVA (${(CONFIGURAZIONE.IVA * 100).toFixed(0)}%):`, 20, yPos);
             doc.text(`${COSTO_IVA} €`, 190, yPos, { align: 'right' }); yPos += 7;
+            
             doc.line(20, yPos, 190, yPos); 
             yPos += 7;
+            
+            // TOTALE FINALE (IVA INCLUSA)
             doc.setFontSize(16);
             doc.setFont(undefined, 'bold');
             doc.text("TOTALE FINALE (IVA INCLUSA):", 20, yPos);
             doc.text(`${currentTotaleFinale.toFixed(2)} €`, 190, yPos, { align: 'right' }); 
             doc.setFont(undefined, 'normal'); yPos += 10;
             doc.line(20, yPos, 190, yPos);
+            // FINE SEZIONE COSTI CONFIDENZIALE
             
             const nomeFile = `Preventivo_N${currentProtocollo.replace('/', '-')}_${currentCliente.replace(/ /g, '_')}.pdf`;
             doc.save(nomeFile);
         }
     </script>
-
 </body>
 </html>
