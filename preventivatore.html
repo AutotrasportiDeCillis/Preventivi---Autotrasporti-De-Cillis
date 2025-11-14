@@ -8,13 +8,19 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
     <style>
-        /* Stili CSS aggiornati per una migliore leggibilità */
+        /* Stili CSS aggiornati per una migliore leggibilità e BRANDING */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f7f6; color: #333; line-height: 1.6; }
         .container { max-width: 850px; margin: 30px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
         .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 20px;}
         /* LOGO VISIBILE NELL'INTERFACCIA */
-        .header img { max-width: 120px; height: auto; margin-bottom: 15px; border-radius: 4px; } 
-        .header h1 { color: #2c3e50; font-size: 1.8em; margin: 5px 0 10px; }
+        .header img { 
+            max-width: 120px; 
+            height: auto; 
+            margin-bottom: 15px; 
+            border-radius: 4px; 
+            display: inline-block; /* Forza la visualizzazione */
+        } 
+        .header h1 { color: #1F456A; font-size: 1.8em; margin: 5px 0 10px; } /* Colore Brand */
         .info-dettagli { font-size: 0.9em; color: #777; font-weight: normal; }
         .protocollo-group { display: flex; align-items: center; margin-bottom: 15px; font-size: 1.1em; padding: 5px 0; border-bottom: 1px dashed #e0e0e0; text-align: left;}
         .protocollo-group strong { margin-right: 10px; }
@@ -27,15 +33,20 @@
         select, input[type="number"], input[type="text"] { width: calc(100% - 22px); padding: 12px; margin-bottom: 20px; border: 1px solid #c0c0c0; border-radius: 6px; box-sizing: border-box; font-size: 1em; background-color: #fff; }
         #km_totali { background-color: #f7e6ff; } /* Colore per campo Km Manuale */
         #prezzo_km_variabile { background-color: #fff3e0; }
-        button { padding: 12px 20px; background-color: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; margin-right: 15px; transition: background-color 0.3s; }
-        button:hover { background-color: #2980b9; }
-        #gestioneButton { background-color: #f39c12; }
-        #gestioneButton:hover { background-color: #e67e22; }
-        #risultato { font-size: 1.8em; margin-top: 30px; font-weight: bold; color: #28a745; border-top: 1px dashed #e0e0e0; padding-top: 25px; text-align: center; }
+        /* Colori Brandizzati */
+        button { padding: 12px 20px; background-color: #1F456A; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; margin-right: 15px; transition: background-color 0.3s; }
+        button:hover { background-color: #0F3050; }
+        #gestioneButton { background-color: #555; } /* Grigio scuro, si abbina al logo */
+        #gestioneButton:hover { background-color: #333; }
+        #risultato { font-size: 1.8em; margin-top: 30px; font-weight: bold; color: #1F456A; border-top: 1px dashed #e0e0e0; padding-top: 25px; text-align: center; }
         #resetLink { display: block; margin-top: 20px; font-size: 0.8em; color: #e74c3c; text-decoration: underline; cursor: pointer; }
     </style>
 </head>
-<body onload="inizializzaApp()">
+<body>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', inizializzaApp);
+    </script>
 
     <div class="container">
         <div class="header">
@@ -59,6 +70,9 @@
             <label for="denominazione_cliente">Denominazione Cliente:</label>
             <input type="text" id="denominazione_cliente">
             
+            <label for="p_iva_cliente">P.IVA / Codice Fiscale Cliente (Opzionale):</label>
+            <input type="text" id="p_iva_cliente" placeholder="Inserisci P.IVA o Codice Fiscale">
+            
             <label for="tratta_da">Luogo di Partenza:</label>
             <input type="text" id="tratta_da" placeholder="Es: Milano, Via Roma 10 (opzionale)">
             
@@ -73,6 +87,9 @@
                 <option value="Carrellone">Carrellone</option>
                 <option value="Centinato">Centinato</option>
             </select>
+            <label for="validita_giorni">Validità del Preventivo (in giorni):</label>
+            <input type="number" id="validita_giorni" value="30" min="1" step="1">
+            
             <label for="prezzo_km_variabile">Prezzo al Km Variabile (€/km) (Opzionale):</label>
             <input type="number" id="prezzo_km_variabile" placeholder="Lascia vuoto per usare il prezzo standard" step="0.01">
         </div>
@@ -88,6 +105,9 @@
     </div>
 
     <script>
+        // La funzione di inizializzazione viene chiamata alla fine per essere sicura che gli elementi siano caricate.
+        document.addEventListener('DOMContentLoaded', inizializzaApp);
+        
         // === CONFIGURAZIONE FIREBASE INSERITA DALL'UTENTE ===
         const firebaseConfig = {
             apiKey: "AIzaSyAPXp7geS7Srr2rWHHqwrJfbze3PoMdLzk",
@@ -115,6 +135,14 @@
         const TITOLO_AZIENDA = "AUTOTRASPORTI DE CILLIS";
         const P_IVA = "02574400010"; 
         const EMAIL = "autotrasportidecillis@gmail.com";
+        const DURATA_VALIDITA_GIORNI = 30; // Default
+        
+        // Dettagli Commerciali per il PDF (Vuoti, lasciamo solo l'intestazione)
+        const DETTAGLI_COMMERCIALI = {
+            telefono: "",
+            sede: "",
+            note: ""
+        };
 
         // Costi fissi e variabili per il calcolo interno
         const CONFIGURAZIONE = { "Carrellone": 2.30, "Centinato": 1.80, "CostoFisso": 300.00, "IVA": 0.22 };
@@ -130,28 +158,10 @@
 
         // --- INIZIALIZZAZIONE ---
         function inizializzaApp() {
-            caricaLogoBase64();
             caricaContatore(); 
             aggiornaProtocolloDisplay();
         }
         
-        function caricaLogoBase64() {
-             // Funzione usata solo per assicurare che il logo sia visibile nell'interfaccia HTML
-            const imgEl = document.getElementById('appLogo');
-            const image = new Image();
-            // ATTENZIONE: se il tuo file è 1.jpg, cambia "1.png" in "1.jpg"
-            image.src = "1.png"; 
-            image.crossOrigin = "Anonymous";
-            image.onload = function() {
-                imgEl.style.display = 'inline-block';
-            };
-            image.onerror = function() {
-                // Se non trova 1.png, mostra un errore in console ma mantiene il layout
-                console.error("Logo '1.png' non trovato. Assicurati che il file sia presente nella directory.");
-            };
-        }
-
-
         // --- LOGICA CONTATORE PROTOCOLLO (Basata su Firebase) ---
         function caricaContatore() {
             if (!db) { return; } 
@@ -237,6 +247,7 @@
             const trattaDa = document.getElementById('tratta_da').value.trim();
             const trattaA = document.getElementById('tratta_a').value.trim();
             const prezzoVariabileInput = parseFloat(document.getElementById('prezzo_km_variabile').value);
+            const pIvaCliente = document.getElementById('p_iva_cliente').value.trim(); 
 
             // Validazione essenziale
             if (!currentCliente || !trattaDa || !trattaA) { 
@@ -281,19 +292,25 @@
 
             const protocolloDaSalvare = currentProtocollo; 
             const newKey = db.ref(FIREBASE_PATH).push().key; 
-            
-            // Crea l'oggetto record con tutti i dati necessari
+            const pIvaCliente = document.getElementById('p_iva_cliente').value.trim(); 
+            const validitaGiorni = parseInt(document.getElementById('validita_giorni').value);
+            const dataValidita = calcolaDataValidita(validitaGiorni);
+
+            // Crea l'oggetto record con tutti i dati necessari 
             const preventivoRecord = {
                 id: newKey, 
                 protocollo: protocolloDaSalvare, 
                 data: new Date().toLocaleDateString('it-IT'),
                 cliente: currentCliente,
+                pIvaCliente: pIvaCliente, 
                 tipoMezzo: currentTipoMezzo,
                 kmTotali: currentKmTotali.toFixed(0),
                 totaleFinale: currentTotaleFinale.toFixed(2),
-                prezzoKmUsato: currentPrezzoKmUsato.toFixed(2),
+                costoBase: currentCostoBase.toFixed(2),
                 trattaDa: document.getElementById('tratta_da').value.trim(),
                 trattaA: document.getElementById('tratta_a').value.trim(),
+                validitaGiorni: validitaGiorni, 
+                dataValidita: dataValidita, 
             };
 
             // Salva il record sul Cloud
@@ -310,6 +327,7 @@
                     // Pulisci i campi dopo il salvataggio per un nuovo preventivo
                     document.getElementById('km_totali').value = 0;
                     document.getElementById('denominazione_cliente').value = '';
+                    document.getElementById('p_iva_cliente').value = ''; 
                     document.getElementById('prezzo_km_variabile').value = ''; 
                     document.getElementById('tratta_da').value = '';
                     document.getElementById('tratta_a').value = '';
@@ -325,14 +343,19 @@
                 });
         }
         
-        // --- GESTIONE PDF (Impaginazione Definitiva e Allineamenti Verticali) ---
+        function calcolaDataValidita(giorni) {
+            const dataInizio = new Date();
+            dataInizio.setDate(dataInizio.getDate() + giorni);
+            return dataInizio.toLocaleDateString('it-IT');
+        }
+        
+        // --- GESTIONE PDF (Impaginazione Definitiva) ---
         
         function generaPDF(record) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const docWidth = doc.internal.pageSize.getWidth();
             const MARGINE_X = 20;
-            // Nessun offset fisso per i valori, dato che sono sotto le etichette
             const LARGHEZZA_MAX_TESTO = docWidth - (MARGINE_X * 2);
             
             // Dati dal record salvato
@@ -340,15 +363,19 @@
             const protocollo = record.protocollo;
             const trattaDa = record.trattaDa;
             const trattaA = record.trattaA;
+            const pIvaCliente = record.pIvaCliente; 
+            const costoBaseRecord = parseFloat(record.costoBase); 
             const totaleFinale = parseFloat(record.totaleFinale);
+            const dataValidita = record.dataValidita; 
+
             
-            // Ricalcola costo base e IVA (usando il totale finale salvato per maggiore precisione)
+            // Ricalcola costo base e IVA
             const costoBase = totaleFinale / (1 + CONFIGURAZIONE.IVA);
             const COSTO_IVA = (totaleFinale - costoBase).toFixed(2);
             
             let yPos = 15;
             
-            // 1. Intestazione Centrata
+            // 1. Intestazione Centrata (Rimani)
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
             doc.text(TITOLO_AZIENDA, docWidth / 2, yPos, { align: 'center' });
@@ -363,7 +390,7 @@
             doc.setDrawColor(200, 200, 200); 
             doc.line(15, yPos, 195, yPos);
             
-            // 2. Titolo Principale (SOLO "Preventivo", centrato)
+            // 2. Titolo Principale
             doc.setFontSize(18);
             doc.setFont(undefined, 'bold');
             yPos += 15;
@@ -387,17 +414,34 @@
             doc.text(`Cliente`, MARGINE_X, yPos);
             yPos += 5;
             doc.setFont(undefined, 'normal');
-            // Gestione del testo Cliente se è molto lungo
             const clienteLines = doc.splitTextToSize(cliente, LARGHEZZA_MAX_TESTO);
             doc.text(clienteLines, MARGINE_X, yPos); 
             yPos += (clienteLines.length * 5) + 5; 
             
+            // P.IVA/C.F. Cliente (GESTIONE CONDIZIONALE)
+            if (pIvaCliente) {
+                doc.setFont(undefined, 'bold');
+                doc.text(`P.IVA / Codice Fiscale`, MARGINE_X, yPos);
+                yPos += 5;
+                doc.setFont(undefined, 'normal');
+                doc.text(pIvaCliente, MARGINE_X, yPos); 
+                yPos += 10;
+            }
+            
             // Data
             doc.setFont(undefined, 'bold');
-            doc.text(`Data`, MARGINE_X, yPos); 
+            doc.text(`Data Emissione`, MARGINE_X, yPos); 
             yPos += 5;
             doc.setFont(undefined, 'normal');
             doc.text(record.data, MARGINE_X, yPos); 
+            yPos += 10;
+            
+            // Validità
+            doc.setFont(undefined, 'bold');
+            doc.text(`Valido Fino Al`, MARGINE_X, yPos); 
+            yPos += 5;
+            doc.setFont(undefined, 'normal');
+            doc.text(dataValidita, MARGINE_X, yPos); 
             yPos += 10;
             
             // 4. Dettagli Tratta (Layout Verticale)
@@ -423,9 +467,9 @@
             doc.setFont(undefined, 'normal');
             const arrivoLines = doc.splitTextToSize(trattaA, LARGHEZZA_MAX_TESTO);
             doc.text(arrivoLines, MARGINE_X, yPos); 
-            yPos += (arrivoLines.length * 5) + 15; // Spazio prima dei costi
+            yPos += (arrivoLines.length * 5) + 15; 
             
-            // 5. INIZIO SEZIONE COSTI
+            // 5. INIZIO SEZIONE COSTI (SOLO TOTALI)
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
             doc.text("RIEPILOGO COSTI", MARGINE_X, yPos); 
@@ -435,10 +479,12 @@
             const FINE_MARGINE_X = docWidth - MARGINE_X;
             
             // PRIMO TOTALE (IVA ESCLUSA)
+            doc.setFont(undefined, 'bold');
             doc.text(`Totale Base (IVA Escl.):`, MARGINE_X, yPos);
-            doc.text(`${costoBase.toFixed(2)} €`, FINE_MARGINE_X, yPos, { align: 'right' }); yPos += 7;
+            doc.text(`${costoBaseRecord} €`, FINE_MARGINE_X, yPos, { align: 'right' }); yPos += 7;
             
             // IVA
+            doc.setFont(undefined, 'normal');
             doc.text(`Aliquota IVA (${(CONFIGURAZIONE.IVA * 100).toFixed(0)}%):`, MARGINE_X, yPos);
             doc.text(`${COSTO_IVA} €`, FINE_MARGINE_X, yPos, { align: 'right' }); yPos += 7;
             
@@ -452,7 +498,8 @@
             doc.text(`${totaleFinale.toFixed(2)} €`, FINE_MARGINE_X, yPos, { align: 'right' }); 
             doc.setFont(undefined, 'normal'); yPos += 10;
             doc.line(MARGINE_X, yPos, FINE_MARGINE_X, yPos);
-            // FINE SEZIONE COSTI
+            // FINE SEZIONE COSTI (E FINE PDF)
+
             
             const nomeFile = `Preventivo_N${protocollo.replace('/', '-')}_${cliente.replace(/ /g, '_')}.pdf`;
             doc.save(nomeFile);
