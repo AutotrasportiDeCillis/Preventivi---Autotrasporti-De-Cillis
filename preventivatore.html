@@ -8,36 +8,35 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     
     <style>
-        /* Stili CSS aggiornati per una migliore leggibilità e BRANDING */
+        /* Stili CSS aggiornati */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f7f6; color: #333; line-height: 1.6; }
         .container { max-width: 850px; margin: 30px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
         .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #e0e0e0; padding-bottom: 20px;}
-        /* LOGO VISIBILE NELL'INTERFACCIA */
-        .header img { 
-            max-width: 120px; 
-            height: auto; 
-            margin-bottom: 15px; 
-            border-radius: 4px; 
-            display: inline-block; /* Forza la visualizzazione */
-        } 
-        .header h1 { color: #1F456A; font-size: 1.8em; margin: 5px 0 10px; } /* Colore Brand */
+        .header img { max-width: 120px; height: auto; margin-bottom: 15px; border-radius: 4px; display: inline-block; } 
+        .header h1 { color: #1F456A; font-size: 1.8em; margin: 5px 0 10px; } 
         .info-dettagli { font-size: 0.9em; color: #777; font-weight: normal; }
         .protocollo-group { display: flex; align-items: center; margin-bottom: 15px; font-size: 1.1em; padding: 5px 0; border-bottom: 1px dashed #e0e0e0; text-align: left;}
         .protocollo-group strong { margin-right: 10px; }
-        #protocolloNumeroDisplay { font-weight: bold; margin-right: 20px; }
         #protocolloNumeroInput { width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; text-align: center; margin-right: 10px; }
         .protocollo-btn { padding: 5px 10px; font-size: 1em; width: 30px; height: 30px; line-height: 1; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; border-radius: 4px;}
         .protocollo-btn:hover { background-color: #e0e0e0; }
         .input-group { padding: 20px 0; margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
         select, input[type="number"], input[type="text"] { width: calc(100% - 22px); padding: 12px; margin-bottom: 20px; border: 1px solid #c0c0c0; border-radius: 6px; box-sizing: border-box; font-size: 1em; background-color: #fff; }
-        #km_totali { background-color: #f7e6ff; } /* Colore per campo Km Manuale */
-        #prezzo_km_variabile { background-color: #fff3e0; }
-        /* Colori Brandizzati */
-        button { padding: 12px 20px; background-color: #1F456A; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; margin-right: 15px; transition: background-color 0.3s; }
+        .tappa-group { border: 1px solid #ddd; padding: 15px; margin-bottom: 25px; border-radius: 8px; background-color: #f9f9f9;}
+        .tappa-group h3 { margin-top: 0; color: #1F456A; border-bottom: 1px dashed #e0e0e0; padding-bottom: 10px;}
+        .third-input { width: calc(33.333% - 14px); float: left; margin-right: 14px; }
+        .clear-fix { clear: both; }
+        
+        /* Bottoni */
+        .button-group { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; display: flex; justify-content: flex-start; flex-wrap: wrap; gap: 15px; }
+        button { padding: 12px 20px; background-color: #1F456A; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; transition: background-color 0.3s; }
         button:hover { background-color: #0F3050; }
-        #gestioneButton { background-color: #555; } /* Grigio scuro, si abbina al logo */
+        #dettaglioPdfButton { background-color: #f39c12; }
+        #dettaglioPdfButton:hover { background-color: #e67e22; }
+        #gestioneButton { background-color: #555; } 
         #gestioneButton:hover { background-color: #333; }
+        
         #risultato { font-size: 1.8em; margin-top: 30px; font-weight: bold; color: #1F456A; border-top: 1px dashed #e0e0e0; padding-top: 25px; text-align: center; }
         #resetLink { display: block; margin-top: 20px; font-size: 0.8em; color: #e74c3c; text-decoration: underline; cursor: pointer; }
     </style>
@@ -73,30 +72,37 @@
             <label for="p_iva_cliente">P.IVA / Codice Fiscale Cliente (Opzionale):</label>
             <input type="text" id="p_iva_cliente" placeholder="Inserisci P.IVA o Codice Fiscale">
             
-            <label for="tratta_da">Luogo di Partenza:</label>
-            <input type="text" id="tratta_da" placeholder="Es: Milano, Via Roma 10 (opzionale)">
-            
-            <label for="tratta_a">Luogo di Destinazione/Arrivo:</label>
-            <input type="text" id="tratta_a" placeholder="Es: Napoli, Piazza Garibaldi 5 (opzionale)">
-            
-            <label for="km_totali">Km Totali A/R (Inserimento Manuale):</label>
-            <input type="number" id="km_totali" value="0" placeholder="Inserisci il totale dei Km A/R" step="1">
-            
-            <label for="tipo_mezzo">Tipo Mezzo:</label>
-            <select id="tipo_mezzo">
-                <option value="Carrellone">Carrellone</option>
+            <label for="tipo_mezzo_globale">Tipo Mezzo (Unico per tutte le tappe):</label>
+            <select id="tipo_mezzo_globale">
+                <option value="Carrellone" selected>Carrellone</option>
                 <option value="Centinato">Centinato</option>
             </select>
+            
+            <label for="numero_tappe">Numero di Tappe/Tratte:</label>
+            <select id="numero_tappe" onchange="generaCampiTappe()">
+                <option value="1">1 Tappa (Tratta semplice)</option>
+                <option value="2">2 Tappe</option>
+                <option value="3" selected>3 Tappe</option>
+                <option value="4">4 Tappe</option>
+                <option value="5">5 Tappe</option>
+                <option value="6">6 Tappe</option>
+            </select>
+            
+            <div id="tappe-container">
+                </div>
+            
             <label for="validita_giorni">Validità del Preventivo (in giorni):</label>
             <input type="number" id="validita_giorni" value="30" min="1" step="1">
             
-            <label for="prezzo_km_variabile">Prezzo al Km Variabile (€/km) (Opzionale):</label>
-            <input type="number" id="prezzo_km_variabile" placeholder="Lascia vuoto per usare il prezzo standard" step="0.01">
         </div>
 
-        <button onclick="calcolaPreventivo()">Calcola Totale</button>
-        <button onclick="salvaArchiviaPreventivo()" id="salvaButton" style="display:none;">Salva e Genera PDF</button>
-        <a href="storico.html" style="text-decoration: none;"><button id="gestioneButton">Gestisci Storico Preventivi</button></a>
+        <div class="button-group">
+            <button onclick="calcolaPreventivo()">Calcola Totale</button>
+            <button onclick="salvaArchiviaPreventivo('client')" id="salvaButton" style="display:none;">Salva e Genera PDF (Cliente)</button>
+            <button onclick="salvaArchiviaPreventivo('dettaglio')" id="dettaglioPdfButton" style="display:none;">Salva e Genera PDF (Dettaglio Interno)</button>
+            <a href="storico.html" style="text-decoration: none;"><button id="gestioneButton">Gestisci Storico Preventivi</button></a>
+        </div>
+
 
         <div id="risultato">Totale Finale (IVA Incl.): 0,00 €</div>
 
@@ -122,7 +128,6 @@
         // Inizializza Firebase
         let db;
         try {
-             firebaseConfig.databaseURL = firebaseConfig.databaseURL || `https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com`;
              firebase.initializeApp(firebaseConfig);
              db = firebase.database();
              console.log("Firebase Database Connesso.");
@@ -135,31 +140,22 @@
         const TITOLO_AZIENDA = "AUTOTRASPORTI DE CILLIS";
         const P_IVA = "02574400010"; 
         const EMAIL = "autotrasportidecillis@gmail.com";
-        const DURATA_VALIDITA_GIORNI = 30; // Default
         
-        // Dettagli Commerciali per il PDF (Vuoti, lasciamo solo l'intestazione)
-        const DETTAGLI_COMMERCIALI = {
-            telefono: "",
-            sede: "",
-            note: ""
-        };
-
-        // Costi fissi e variabili per il calcolo interno
-        const CONFIGURAZIONE = { "Carrellone": 2.30, "Centinato": 1.80, "CostoFisso": 300.00, "IVA": 0.22 };
-
+        // Costi standard al KM per il calcolo interno (aggiornati)
+        const CONFIGURAZIONE = { "Carrellone": 2.30, "Centinato": 1.80, "IVA": 0.22 };
+        
         let currentProtocollo = ''; 
         let currentProtocolloCount = 0; 
         let currentTotaleFinale = 0;
         let currentCostoBase = 0;
-        let currentKmTotali = 0;
-        let currentTipoMezzo = '';
         let currentCliente = '';
-        let currentPrezzoKmUsato = 0; 
+        let dettaglioTappe = []; 
 
         // --- INIZIALIZZAZIONE ---
         function inizializzaApp() {
             caricaContatore(); 
             aggiornaProtocolloDisplay();
+            generaCampiTappe(); // Genera i campi iniziali (di default 3)
         }
         
         // --- LOGICA CONTATORE PROTOCOLLO (Basata su Firebase) ---
@@ -194,83 +190,122 @@
             });
         }
         
-        // --- Altre funzioni di Protocollo ---
-        function formattaProtocollo(numero) {
-            const oggi = new Date();
-            const anno = oggi.getFullYear();
-            const num = Math.max(1, parseInt(numero)); 
-            const numeroProgressivo = num.toString().padStart(3, '0'); // Formatta a 3 cifre
-            return `${anno}/${numeroProgressivo}`;
-        }
+        // --- GESTIONE CAMPI DINAMICI DELLE TAPPE ---
+        function generaCampiTappe() {
+            const numTappe = parseInt(document.getElementById('numero_tappe').value);
+            const container = document.getElementById('tappe-container');
+            container.innerHTML = ''; // Pulisce i campi precedenti
 
-        function aggiornaProtocolloDisplay() {
-            const inputEl = document.getElementById('protocolloNumeroInput');
-            const inputVal = parseInt(inputEl.value);
-            currentProtocolloCount = Math.max(1, isNaN(inputVal) ? 1 : inputVal); 
-            inputEl.value = currentProtocolloCount; 
-            currentProtocollo = formattaProtocollo(currentProtocolloCount);
-            document.getElementById('protocolloNumeroDisplay').innerText = `(${currentProtocollo})`;
-        }
-
-        function cambiaProtocollo(delta) {
-            const inputEl = document.getElementById('protocolloNumeroInput');
-            let nuovoValore = parseInt(inputEl.value) + delta;
-            nuovoValore = Math.max(1, nuovoValore); 
-            inputEl.value = nuovoValore;
-            aggiornaProtocolloDisplay();
-        }
-
-        function aggiornaProtocollo() { aggiornaProtocolloDisplay(); }
-
-        function resetProtocollo() {
-            if (!db) { console.error("Connessione Firebase non attiva."); return; }
-            if (confirm("ATTENZIONE: Sei sicuro di voler ELIMINARE TUTTO lo storico preventivi dal Cloud? Questa azione è irreversibile su tutti i dispositivi.")) {
-                db.ref(FIREBASE_PATH).set(null)
-                    .then(() => {
-                        alert("Storico eliminato con successo. La pagina verrà ricaricata.");
-                        location.reload(); 
-                    })
-                    .catch((error) => {
-                        alert("Errore durante l'eliminazione dei dati. Controlla la console.");
-                        console.error("Errore eliminazione:", error);
-                    });
+            for (let i = 1; i <= numTappe; i++) {
+                
+                // HTML per la singola tappa
+                const tappaHTML = `
+                    <div class="tappa-group" id="tappa_${i}">
+                        <h3>Tappa ${i}</h3>
+                        
+                        <div class="third-input">
+                            <label for="tratta_da_${i}">Partenza:</label>
+                            <input type="text" id="tratta_da_${i}" placeholder="Es: Vercelli">
+                        </div>
+                        <div class="third-input">
+                            <label for="tratta_a_${i}">Destinazione/Arrivo:</label>
+                            <input type="text" id="tratta_a_${i}" placeholder="Es: Milano">
+                        </div>
+                        <div class="third-input" style="margin-right: 0;">
+                            <label for="stato_mezzo_${i}">Stato Mezzo:</label>
+                            <select id="stato_mezzo_${i}">
+                                <option value="Vuoto">Vuoto</option>
+                                <option value="Pieno">Pieno</option>
+                            </select>
+                        </div>
+                        <div class="clear-fix"></div>
+                        
+                        <div class="third-input">
+                            <label for="km_tappa_${i}">Km Tappa ${i} (A/R):</label>
+                            <input type="number" id="km_tappa_${i}" value="0" placeholder="Km A/R" step="1" min="0">
+                        </div>
+                        
+                        <div class="third-input" style="width: calc(66.666% - 14px); margin-right: 0;">
+                            <label for="prezzo_km_variabile_${i}">Prezzo al Km Tappa ${i} (€/km) (Opzionale, sostituisce lo standard):</label>
+                            <input type="number" id="prezzo_km_variabile_${i}" value="" placeholder="Lascia vuoto per usare il prezzo standard" step="0.01">
+                        </div>
+                        <div class="clear-fix"></div>
+                        
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', tappaHTML);
             }
         }
-        
-        // --- CALCOLO PREVENTIVO ---
+
+        // --- CALCOLO PREVENTIVO MULTI-TAPPA (Logica aggiornata) ---
         function calcolaPreventivo() {
             aggiornaProtocolloDisplay();
-
-            currentTipoMezzo = document.getElementById('tipo_mezzo').value;
-            currentKmTotali = parseFloat(document.getElementById('km_totali').value); 
+            
+            currentCostoBase = 0;
+            currentTotaleFinale = 0;
+            dettaglioTappe = [];
+            let totaleKm = 0;
+            
             currentCliente = document.getElementById('denominazione_cliente').value.trim();
-            const trattaDa = document.getElementById('tratta_da').value.trim();
-            const trattaA = document.getElementById('tratta_a').value.trim();
-            const prezzoVariabileInput = parseFloat(document.getElementById('prezzo_km_variabile').value);
-            const pIvaCliente = document.getElementById('p_iva_cliente').value.trim(); 
+            const numTappe = parseInt(document.getElementById('numero_tappe').value);
+            const tipoMezzoGlobale = document.getElementById('tipo_mezzo_globale').value; // Tipo Mezzo unico
 
             // Validazione essenziale
-            if (!currentCliente || !trattaDa || !trattaA) { 
-                alert("Per favore, inserisci Denominazione Cliente, Luogo di Partenza e Destinazione prima di calcolare."); 
+            if (!currentCliente) { 
+                alert("Per favore, inserisci la Denominazione Cliente prima di calcolare."); 
                 return; 
             }
-            if (currentKmTotali <= 0 || isNaN(currentKmTotali)) { 
-                alert("Per favore, inserisci i Km Totali A/R (deve essere un numero positivo)."); 
-                return; 
+            
+            let datiMancanti = false;
+            // Espressione regolare per rimuovere caratteri problematici (virgolette smart, apostrofi, punti esclamativi che danno problemi al PDF)
+            const CLEAN_REGEX = /[\u2018\u2019\u201c\u201d\u2032\u2033!’]/g; 
+
+
+            for (let i = 1; i <= numTappe; i++) {
+                // Pulizia input per eliminare caratteri che causano problemi nel PDF (es. !’ ' ‘)
+                const trattaDa = document.getElementById(`tratta_da_${i}`).value.trim().replace(CLEAN_REGEX, '');
+                const trattaA = document.getElementById(`tratta_a_${i}`).value.trim().replace(CLEAN_REGEX, '');
+                const kmTappa = parseFloat(document.getElementById(`km_tappa_${i}`).value);
+                const statoMezzo = document.getElementById(`stato_mezzo_${i}`).value; // Stato Pieno/Vuoto
+                const prezzoVariabileInput = parseFloat(document.getElementById(`prezzo_km_variabile_${i}`).value);
+                
+                if (!trattaDa || !trattaA || kmTappa <= 0 || isNaN(kmTappa)) {
+                    datiMancanti = true;
+                }
+
+                if (datiMancanti) {
+                    alert(`Per favore, compila tutti i campi (Partenza, Arrivo, Km positivi) per la Tappa ${i}.`);
+                    return; 
+                }
+                
+                // 1. Determina il prezzo al KM STANDARD (basato sul mezzo globale)
+                let prezzoKmBase = CONFIGURAZIONE[tipoMezzoGlobale];
+                
+                // 2. Determina il prezzo al KM da usare per la tappa (override opzionale)
+                let prezzoKmUsato;
+                if (!isNaN(prezzoVariabileInput) && prezzoVariabileInput > 0) {
+                    prezzoKmUsato = prezzoVariabileInput;
+                } else {
+                    prezzoKmUsato = prezzoKmBase;
+                }
+                
+                // Calcolo Costo Tappa
+                let costoTappa = kmTappa * prezzoKmUsato;
+                currentCostoBase += costoTappa;
+                totaleKm += kmTappa;
+                
+                // Salva il dettaglio della tappa
+                dettaglioTappe.push({
+                    tappa: i,
+                    trattaDa: trattaDa,
+                    trattaA: trattaA,
+                    statoMezzo: statoMezzo, // Campo nuovo
+                    kmTappa: kmTappa.toFixed(0),
+                    prezzoKmUsato: prezzoKmUsato.toFixed(2),
+                    costoTappa: costoTappa.toFixed(2),
+                });
             }
-
-            // Determina il prezzo al KM da usare
-            if (!isNaN(prezzoVariabileInput) && prezzoVariabileInput > 0) {
-                currentPrezzoKmUsato = prezzoVariabileInput;
-            } else {
-                currentPrezzoKmUsato = CONFIGURAZIONE[currentTipoMezzo];
-            }
-
-            // Calcolo Costo Base: Costo Fisso se KM <= 100, altrimenti Costo a KM
-            currentCostoBase = (currentKmTotali <= 100) 
-                ? CONFIGURAZIONE.CostoFisso 
-                : currentKmTotali * currentPrezzoKmUsato;
-
+            
             // Calcolo Totale Finale (IVA inclusa)
             currentTotaleFinale = currentCostoBase * (1 + CONFIGURAZIONE.IVA);
             
@@ -278,15 +313,16 @@
             currentTotaleFinale = parseFloat(currentTotaleFinale.toFixed(2));
 
             document.getElementById('risultato').innerHTML = 
-                "<strong>Totale Finale (IVA Incl.):</strong> " + currentTotaleFinale.toFixed(2) + " €";
+                `<strong>Totale Finale (IVA Incl.):</strong> ${currentTotaleFinale.toFixed(2)} € (Totale Km: ${totaleKm.toFixed(0)})`;
             document.getElementById('salvaButton').style.display = 'inline-block';
+            document.getElementById('dettaglioPdfButton').style.display = 'inline-block';
         }
 
         // --- SALVA e ARCHIVIA (Su Firebase) ---
-        function salvaArchiviaPreventivo() {
+        function salvaArchiviaPreventivo(tipoPdf) {
             // Re-valida prima di salvare
-            if (currentTotaleFinale === 0 || !currentCliente || !document.getElementById('tratta_da').value.trim() || !db) { 
-                alert("Per favorc, calcola il preventivo e assicurati che la connessione Cloud sia attiva."); 
+            if (currentTotaleFinale === 0 || !currentCliente || dettaglioTappe.length === 0 || !db) { 
+                alert("Per favore, calcola il preventivo e assicurati che la connessione Cloud sia attiva."); 
                 return; 
             }
 
@@ -295,6 +331,9 @@
             const pIvaCliente = document.getElementById('p_iva_cliente').value.trim(); 
             const validitaGiorni = parseInt(document.getElementById('validita_giorni').value);
             const dataValidita = calcolaDataValidita(validitaGiorni);
+            const tipoMezzoGlobale = document.getElementById('tipo_mezzo_globale').value;
+            
+            const totaleKm = dettaglioTappe.reduce((sum, tappa) => sum + parseInt(tappa.kmTappa), 0);
 
             // Crea l'oggetto record con tutti i dati necessari 
             const preventivoRecord = {
@@ -303,37 +342,41 @@
                 data: new Date().toLocaleDateString('it-IT'),
                 cliente: currentCliente,
                 pIvaCliente: pIvaCliente, 
-                tipoMezzo: currentTipoMezzo,
-                kmTotali: currentKmTotali.toFixed(0),
+                kmTotali: totaleKm.toFixed(0), 
+                tipoMezzoGlobale: tipoMezzoGlobale, // Campo nuovo
                 totaleFinale: currentTotaleFinale.toFixed(2),
                 costoBase: currentCostoBase.toFixed(2),
-                trattaDa: document.getElementById('tratta_da').value.trim(),
-                trattaA: document.getElementById('tratta_a').value.trim(),
+                trattaDa: dettaglioTappe[0].trattaDa, 
+                trattaA: dettaglioTappe[dettaglioTappe.length - 1].trattaA, 
                 validitaGiorni: validitaGiorni, 
-                dataValidita: dataValidita, 
+                dataValidita: dataValidita,
+                dettaglioTappe: dettaglioTappe 
             };
 
             // Salva il record sul Cloud
             db.ref(FIREBASE_PATH + '/' + newKey).set(preventivoRecord)
                 .then(() => {
                     try {
-                         generaPDF(preventivoRecord); // Passa i dati salvati al PDF
-                         alert(`Preventivo N. ${protocolloDaSalvare} salvato sul Cloud e PDF scaricato con successo.`);
+                         if (tipoPdf === 'client') {
+                             generaPDF(preventivoRecord);
+                             alert(`Preventivo N. ${protocolloDaSalvare} salvato e PDF Cliente scaricato con successo.`);
+                         } else {
+                             generaPDFDettaglio(preventivoRecord);
+                             alert(`Preventivo N. ${protocolloDaSalvare} salvato e PDF Dettaglio Interno scaricato con successo.`);
+                         }
+                         
                     } catch (e) {
                          alert(`ATTENZIONE: Preventivo N. ${protocolloDaSalvare} salvato sul Cloud, ma il download del PDF è fallito. Controlla lo storico.`);
                          console.error("Errore nella generazione PDF:", e);
                     }
 
                     // Pulisci i campi dopo il salvataggio per un nuovo preventivo
-                    document.getElementById('km_totali').value = 0;
                     document.getElementById('denominazione_cliente').value = '';
                     document.getElementById('p_iva_cliente').value = ''; 
-                    document.getElementById('prezzo_km_variabile').value = ''; 
-                    document.getElementById('tratta_da').value = '';
-                    document.getElementById('tratta_a').value = '';
                     document.getElementById('risultato').innerHTML = "Totale Finale (IVA Incl.): 0,00 €";
                     document.getElementById('salvaButton').style.display = 'none';
-                    
+                    document.getElementById('dettaglioPdfButton').style.display = 'none';
+                    generaCampiTappe(); 
                     cambiaProtocollo(1);
 
                 })
@@ -349,8 +392,7 @@
             return dataInizio.toLocaleDateString('it-IT');
         }
         
-        // --- GESTIONE PDF (Impaginazione Definitiva) ---
-        
+        // --- GESTIONE PDF CLIENTE (Solo Totale e Tipo Mezzo) ---
         function generaPDF(record) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -361,21 +403,19 @@
             // Dati dal record salvato
             const cliente = record.cliente;
             const protocollo = record.protocollo;
-            const trattaDa = record.trattaDa;
-            const trattaA = record.trattaA;
             const pIvaCliente = record.pIvaCliente; 
+            const tipoMezzo = record.tipoMezzoGlobale; // Nuovo campo
             const costoBaseRecord = parseFloat(record.costoBase); 
             const totaleFinale = parseFloat(record.totaleFinale);
             const dataValidita = record.dataValidita; 
 
-            
             // Ricalcola costo base e IVA
             const costoBase = totaleFinale / (1 + CONFIGURAZIONE.IVA);
             const COSTO_IVA = (totaleFinale - costoBase).toFixed(2);
             
             let yPos = 15;
             
-            // 1. Intestazione Centrata (Rimani)
+            // 1. Intestazione Centrata
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
             doc.text(TITOLO_AZIENDA, docWidth / 2, yPos, { align: 'center' });
@@ -386,7 +426,7 @@
             yPos += 5;
             doc.text(`Email: ${EMAIL}`, docWidth / 2, yPos, { align: 'center' });
 
-            yPos += 8; // Spazio dopo l'intestazione
+            yPos += 8; 
             doc.setDrawColor(200, 200, 200); 
             doc.line(15, yPos, 195, yPos);
             
@@ -396,9 +436,9 @@
             yPos += 15;
             doc.text("Preventivo", docWidth / 2, yPos, { align: 'center' });
             doc.setFont(undefined, 'normal');
-            yPos += 20; // Spazio pulito prima dei dettagli
+            yPos += 20; 
             
-            // 3. Dettagli Cliente e Protocollo (Layout Verticale)
+            // 3. Dettagli Cliente e Protocollo
             doc.setFontSize(12);
             
             // Protocollo
@@ -444,32 +484,15 @@
             doc.text(dataValidita, MARGINE_X, yPos); 
             yPos += 10;
             
-            // 4. Dettagli Tratta (Layout Verticale)
-            
+            // Tipo Mezzo
             doc.setFont(undefined, 'bold');
-            doc.text(`Tratta`, MARGINE_X, yPos);
+            doc.text(`Tipo Mezzo Utilizzato:`, MARGINE_X, yPos);
+            yPos += 5;
             doc.setFont(undefined, 'normal');
-            yPos += 7;
+            doc.text(tipoMezzo, MARGINE_X, yPos); 
+            yPos += 15;
 
-            // Partenza
-            doc.setFont(undefined, 'bold');
-            doc.text(`  Partenza`, MARGINE_X, yPos); 
-            yPos += 5;
-            doc.setFont(undefined, 'normal');
-            const partenzaLines = doc.splitTextToSize(trattaDa, LARGHEZZA_MAX_TESTO);
-            doc.text(partenzaLines, MARGINE_X, yPos); 
-            yPos += (partenzaLines.length * 5) + 5; 
-            
-            // Arrivo
-            doc.setFont(undefined, 'bold');
-            doc.text(`  Arrivo`, MARGINE_X, yPos); 
-            yPos += 5;
-            doc.setFont(undefined, 'normal');
-            const arrivoLines = doc.splitTextToSize(trattaA, LARGHEZZA_MAX_TESTO);
-            doc.text(arrivoLines, MARGINE_X, yPos); 
-            yPos += (arrivoLines.length * 5) + 15; 
-            
-            // 5. INIZIO SEZIONE COSTI (SOLO TOTALI)
+            // 4. SEZIONE COSTI (SOLO TOTALI)
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
             doc.text("RIEPILOGO COSTI", MARGINE_X, yPos); 
@@ -498,12 +521,167 @@
             doc.text(`${totaleFinale.toFixed(2)} €`, FINE_MARGINE_X, yPos, { align: 'right' }); 
             doc.setFont(undefined, 'normal'); yPos += 10;
             doc.line(MARGINE_X, yPos, FINE_MARGINE_X, yPos);
-            // FINE SEZIONE COSTI (E FINE PDF)
-
             
             const nomeFile = `Preventivo_N${protocollo.replace('/', '-')}_${cliente.replace(/ /g, '_')}.pdf`;
             doc.save(nomeFile);
         }
+
+        // --- NUOVA GESTIONE PDF DETTAGLIO INTERNO (con stato Pieno/Vuoto) ---
+        function generaPDFDettaglio(record) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const docWidth = doc.internal.pageSize.getWidth();
+            const MARGINE_X = 10;
+            
+            const dettaglio = record.dettaglioTappe;
+            const CLEAN_REGEX = /[\u2018\u2019\u201c\u201d\u2032\u2033!’]/g; 
+            
+            let yPos = 15;
+            
+            // Intestazione
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text(TITOLO_AZIENDA, docWidth / 2, yPos, { align: 'center' });
+            yPos += 7;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.text(`Preventivo N. ${record.protocollo}`, docWidth / 2, yPos, { align: 'center' });
+            yPos += 5;
+            doc.text(`Cliente: ${record.cliente} | Mezzo: ${record.tipoMezzoGlobale}`, docWidth / 2, yPos, { align: 'center' });
+            
+            yPos += 15; 
+            
+            // 1. Dettagli riepilogativi (nuova impostazione)
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text("RIEPILOGO VIAGGIO", MARGINE_X, yPos);
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal'); yPos += 8;
+            
+            doc.text(`Tratta Totale: ${record.trattaDa.replace(CLEAN_REGEX, '')} → ${record.trattaA.replace(CLEAN_REGEX, '')}`, MARGINE_X, yPos); yPos += 5;
+            doc.text(`Totale Km per tutte le tappe: ${record.kmTotali} km`, MARGINE_X, yPos); yPos += 5;
+            doc.text(`Data Emissione: ${record.data}`, MARGINE_X, yPos); yPos += 10;
+            
+            // Separatore
+            doc.setDrawColor(200, 200, 200); 
+            doc.line(MARGINE_X, yPos, docWidth - MARGINE_X, yPos);
+            yPos += 5;
+
+            // 2. Dettaglio Tappe
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text("DETTAGLIO SPEDIZIONE PER TAPPA", MARGINE_X, yPos); 
+            doc.setFont(undefined, 'normal'); 
+            yPos += 10; // Spazio pulito dopo il titolo
+
+            // Tabella Dettaglio Tappe
+            const tableData = dettaglio.map(t => [
+                `Tappa ${t.tappa}`,
+                `${t.trattaDa.replace(CLEAN_REGEX, '')} → ${t.trattaA.replace(CLEAN_REGEX, '')}`, 
+                t.statoMezzo,
+                `${t.kmTappa} km`,
+                `${t.prezzoKmUsato} €/km`,
+                `${t.costoTappa} €`
+            ]);
+            
+            doc.autoTable({
+                startY: yPos,
+                head: [['Tappa', 'Tratta (Partenza → Arrivo)', 'Stato Mezzo', 'Km', 'Prezzo/Km Applicato', 'Costo Tappa']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [31, 69, 106], fontStyle: 'bold' },
+                // Configurazione larghezza colonne per evitare il taglio del testo e garantire la leggibilità
+                columnStyles: {
+                    0: { cellWidth: 20 },   // Tappa
+                    1: { cellWidth: 65 },   // Tratta 
+                    2: { cellWidth: 30 },   // Stato
+                    3: { cellWidth: 20 },   // Km
+                    4: { cellWidth: 30 },   // Prezzo/Km Applicato
+                    5: { cellWidth: 25 }    // Costo Tappa
+                },
+                margin: { left: MARGINE_X, right: MARGINE_X },
+                didDrawPage: function (data) {
+                    yPos = data.cursor.y;
+                }
+            });
+            
+            yPos = doc.autoTable.previous.finalY + 10;
+            
+            // 3. Riepilogo finale
+            const FINE_MARGINE_X = docWidth - MARGINE_X;
+            doc.setFontSize(14);
+            doc.setFont(undefined, 'bold');
+            doc.text("RIEPILOGO ECONOMICO", MARGINE_X, yPos); 
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'normal'); yPos += 10;
+            
+            
+            doc.setFont(undefined, 'bold');
+            doc.text(`Totale Base (Somma costi tappe - IVA Escl.):`, MARGINE_X, yPos);
+            doc.text(`${record.costoBase} €`, FINE_MARGINE_X, yPos, { align: 'right' }); yPos += 7;
+            
+            const costoBase = parseFloat(record.totaleFinale) / (1 + CONFIGURAZIONE.IVA);
+            const COSTO_IVA = (parseFloat(record.totaleFinale) - costoBase).toFixed(2);
+            
+            doc.setFont(undefined, 'normal');
+            doc.text(`Aliquota IVA (${(CONFIGURAZIONE.IVA * 100).toFixed(0)}%):`, MARGINE_X, yPos);
+            doc.text(`${COSTO_IVA} €`, FINE_MARGINE_X, yPos, { align: 'right' }); yPos += 7;
+            
+            doc.line(MARGINE_X, yPos, FINE_MARGINE_X, yPos); 
+            yPos += 7;
+            
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text("TOTALE FINALE (IVA INCLUSA):", MARGINE_X, yPos);
+            doc.text(`${record.totaleFinale} €`, FINE_MARGINE_X, yPos, { align: 'right' }); 
+            
+            const nomeFile = `Preventivo_N${record.protocollo.replace('/', '-')}_${record.cliente.replace(/ /g, '_')}_DETTAGLIO_INT.pdf`;
+            doc.save(nomeFile);
+        }
+
+        // --- Funzioni di Protocollo (Inalterate) ---
+        function formattaProtocollo(numero) {
+            const oggi = new Date();
+            const anno = oggi.getFullYear();
+            const num = Math.max(1, parseInt(numero)); 
+            const numeroProgressivo = num.toString().padStart(3, '0');
+            return `${anno}/${numeroProgressivo}`;
+        }
+
+        function aggiornaProtocolloDisplay() {
+            const inputEl = document.getElementById('protocolloNumeroInput');
+            const inputVal = parseInt(inputEl.value);
+            currentProtocolloCount = Math.max(1, isNaN(inputVal) ? 1 : inputVal); 
+            inputEl.value = currentProtocolloCount; 
+            currentProtocollo = formattaProtocollo(currentProtocolloCount);
+            document.getElementById('protocolloNumeroDisplay').innerText = `(${currentProtocollo})`;
+        }
+
+        function cambiaProtocollo(delta) {
+            const inputEl = document.getElementById('protocolloNumeroInput');
+            let nuovoValore = parseInt(inputEl.value) + delta;
+            nuovoValore = Math.max(1, nuovoValore); 
+            inputEl.value = nuovoValore;
+            aggiornaProtocolloDisplay();
+        }
+
+        function aggiornaProtocollo() { aggiornaProtocolloDisplay(); }
+
+        function resetProtocollo() {
+            if (!db) { console.error("Connessione Firebase non attiva."); return; }
+            if (confirm("ATTENZIONE: Sei sicuro di voler ELIMINARE TUTTO lo storico preventivi dal Cloud? Questa azione è irreversibile su tutti i dispositivi.")) {
+                db.ref(FIREBASE_PATH).set(null)
+                    .then(() => {
+                        alert("Storico eliminato con successo. La pagina verrà ricaricata.");
+                        location.reload(); 
+                    })
+                    .catch((error) => {
+                        alert("Errore durante l'eliminazione dei dati. Controlla la console.");
+                        console.error("Errore eliminazione:", error);
+                    });
+            }
+        }
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script> 
 </body>
 </html>
